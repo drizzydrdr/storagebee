@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>storagebeebee — Executive Dashboard</title>
+<style>
+  :root {
+    --navy: #0d1b35; --gold: #c9a84c;
+    --bg: #f4f5f7; --white: #fff; --text: #1a2233; --muted: #6b7280; --border: #e2e5ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--navy); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 800; }
+  header .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; margin-inline-end:6px; box-shadow: 0 0 0 3px rgba(34,197,94,0.25); }
+  header button { background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  main { max-width: 1000px; margin: 24px auto; padding: 0 24px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .summary-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .summary-card .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .summary-card .value { font-size: 26px; font-weight: 900; margin-top: 4px; }
+  .storage-list { display: grid; gap: 12px; }
+  .storage-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; cursor: pointer; }
+  .storage-card:hover { border-color: var(--gold); }
+  .storage-card-top { display: flex; justify-content: space-between; align-items: center; }
+  .storage-name { font-weight: 800; font-size: 15px; }
+  .storage-stats { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .detail-panel { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-top: 16px; display: none; }
+  .detail-panel.open { display: block; }
+  .detail-panel h2 { font-size: 15px; margin: 0 0 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  th { color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
+  .tabs-inner { display: flex; gap: 16px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .tabs-inner div { padding-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+  .tabs-inner div.active { color: var(--navy); border-color: var(--gold); }
+  #loadingGate { padding: 60px; text-align: center; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="loadingGate">Checking access…</div>
+
+<div id="ceoApp" style="display:none">
+  <header>
+    <h1><span class="live-dot"></span>storagebeebee — Executive Dashboard</h1>
+    <button onclick="handleLogout()">Log out</button>
+  </header>
+
+  <main>
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <div class="storage-list" id="storageList"></div>
+
+    <div class="detail-panel" id="detailPanel">
+      <h2 id="detailTitle"></h2>
+      <div class="tabs-inner">
+        <div class="active" id="dtab-items" onclick="switchDetailTab('items')">Items</div>
+        <div id="dtab-log" onclick="switchDetailTab('log')">Activity Log</div>
+      </div>
+      <div id="ditems">
+        <table>
+          <thead><tr><th>Description</th><th>Category</th><th>Quantity</th></tr></thead>
+          <tbody id="itemsTableBody"></tbody>
+        </table>
+      </div>
+      <div id="dlog" style="display:none">
+        <table>
+          <thead><tr><th>Action</th><th>Item</th><th>Details</th><th>Reason</th><th>By</th><th>When</th></tr></thead>
+          <tbody id="logTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script src="data.js"></script>
+<script src="shared-auth-check.js"></script>
+<script>
+let storages = [];
+let activeStorageId = null;
+let refreshTimer = null;
+
+async function init() {
+  const profile = await requireRole('ceo');
+  if (!profile) return;
+  document.getElementById('loadingGate').style.display = 'none';
+  document.getElementById('ceoApp').style.display = 'block';
+  await loadDashboard();
+  // "Live" via periodic refresh — simple and reliable; can be swapped for
+  // a Supabase Realtime subscription later if true push updates are wanted.
+  refreshTimer = setInterval(loadDashboard, 15000);
+}
+
+async function loadDashboard() {
+  const { data: storageRows } = await supabase.from('storages').select('id, name').order('name');
+  storages = storageRows || [];
+
+  const { data: items } = await supabase.from('items').select('storage_id, quantity');
+  const statsByStorage = {};
+  storages.forEach(s => statsByStorage[s.id] = { itemCount: 0, totalUnits: 0 });
+  (items || []).forEach(item => {
+    if (!statsByStorage[item.storage_id]) return;
+    statsByStorage[item.storage_id].itemCount++;
+    statsByStorage[item.storage_id].totalUnits += Number(item.quantity) || 0;
+  });
+
+  renderSummary(statsByStorage);
+  renderStorageList(statsByStorage);
+  if (activeStorageId) await loadDetail(activeStorageId);
+}
+
+function renderSummary(statsByStorage) {
+  const totalStorages = storages.length;
+  const totalItems = Object.values(statsByStorage).reduce((a, s) => a + s.itemCount, 0);
+  const totalUnits = Object.values(statsByStorage).reduce((a, s) => a + s.totalUnits, 0);
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="summary-card"><div class="label">Storages</div><div class="value">${totalStorages}</div></div>
+    <div class="summary-card"><div class="label">Total item types</div><div class="value">${totalItems}</div></div>
+    <div class="summary-card"><div class="label">Total units</div><div class="value">${totalUnits}</div></div>
+  `;
+}
+
+function renderStorageList(statsByStorage) {
+  const el = document.getElementById('storageList');
+  if (storages.length === 0) { el.innerHTML = '<div class="empty">No storages yet.</div>'; return; }
+  el.innerHTML = storages.map(s => {
+    const stats = statsByStorage[s.id] || { itemCount: 0, totalUnits: 0 };
+    return `<div class="storage-card" onclick="openDetail('${s.id}', '${escapeHtmlCeo(s.name)}')">
+      <div class="storage-card-top">
+        <div class="storage-name">${escapeHtmlCeo(s.name)}</div>
+      </div>
+      <div class="storage-stats">${stats.itemCount} item types · ${stats.totalUnits} total units</div>
+    </div>`;
+  }).join('');
+}
+
+async function openDetail(storageId, storageName) {
+  activeStorageId = storageId;
+  document.getElementById('detailTitle').textContent = storageName;
+  document.getElementById('detailPanel').classList.add('open');
+  switchDetailTab('items');
+  await loadDetail(storageId);
+  document.getElementById('detailPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function switchDetailTab(name) {
+  document.getElementById('dtab-items').classList.toggle('active', name === 'items');
+  document.getElementById('dtab-log').classList.toggle('active', name === 'log');
+  document.getElementById('ditems').style.display = name === 'items' ? 'block' : 'none';
+  document.getElementById('dlog').style.display = name === 'log' ? 'block' : 'none';
+}
+
+async function loadDetail(storageId) {
+  const { data: items } = await supabase
+    .from('items').select('description, quantity, categories(name)')
+    .eq('storage_id', storageId).order('description');
+  document.getElementById('itemsTableBody').innerHTML = (items || []).map(i =>
+    `<tr><td>${escapeHtmlCeo(i.description)}</td><td>${escapeHtmlCeo(i.categories ? i.categories.name : '—')}</td><td>${i.quantity}</td></tr>`
+  ).join('') || '<tr><td colspan="3" class="empty">No items</td></tr>';
+
+  const { data: logs } = await supabase
+    .from('logs').select('action, item_description, details, reason, created_at, profiles(full_name, username)')
+    .eq('storage_id', storageId).order('created_at', { ascending: false }).limit(100);
+  document.getElementById('logTableBody').innerHTML = (logs || []).map(l =>
+    `<tr>
+      <td>${l.action}</td>
+      <td>${escapeHtmlCeo(l.item_description)}</td>
+      <td>${escapeHtmlCeo(l.details || '—')}</td>
+      <td>${escapeHtmlCeo(l.reason || '—')}</td>
+      <td>${escapeHtmlCeo(l.profiles ? (l.profiles.full_name || l.profiles.username) : '—')}</td>
+      <td>${new Date(l.created_at).toLocaleString()}</td>
+    </tr>`
+  ).join('') || '<tr><td colspan="6" class="empty">No log entries</td></tr>';
+}
+
+function escapeHtmlCeo(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : str;
+  return div.innerHTML;
+}
+
+async function handleLogout() {
+  clearInterval(refreshTimer);
+  await signOut();
+  window.location.href = 'index.html';
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

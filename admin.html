@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>storagebeebee — Admin</title>
+<style>
+  :root {
+    --navy: #0d1b35; --gold: #c9a84c; --gold-dark: #a07830;
+    --bg: #f4f5f7; --white: #fff; --text: #1a2233; --muted: #6b7280;
+    --border: #e2e5ea; --danger: #b83232; --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--navy); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 800; }
+  header button { background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .tabs { display: flex; gap: 4px; padding: 12px 24px 0; background: var(--white); border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 16px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--navy); border-color: var(--gold); }
+  main { max-width: 900px; margin: 24px auto; padding: 0 24px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 14px; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px; font-family: inherit; }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  button.primary { background: var(--navy); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 700; }
+  button.primary:disabled { opacity: 0.5; }
+  button.danger { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  th { color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+  .badge.worker { background: #eef2ff; color: #3730a3; }
+  .badge.admin { background: #fef3c7; color: #92400e; }
+  .badge.ceo { background: #d1fae5; color: #065f46; }
+  .checklist { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checklist label { display: flex; align-items: center; gap: 6px; font-weight: 500; color: var(--text); background: var(--bg); padding: 6px 10px; border-radius: 8px; font-size: 13px; margin: 0; width: auto; cursor: pointer; }
+  .checklist input[type=checkbox] { width: auto; margin: 0; }
+  .msg { font-size: 13px; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: none; }
+  .msg.error { background: #fdecea; color: var(--danger); display: block; }
+  .msg.success { background: #d1fae5; color: #065f46; display: block; }
+  #loadingGate { padding: 60px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="loadingGate">Checking access…</div>
+
+<div id="adminApp" style="display:none">
+  <header>
+    <h1>storagebeebee — Admin</h1>
+    <button onclick="handleLogout()">Log out</button>
+  </header>
+  <div class="tabs">
+    <div class="tab active" id="tab-users" onclick="switchTab('users')">Users</div>
+    <div class="tab" id="tab-storages" onclick="switchTab('storages')">Storages</div>
+    <div class="tab" id="tab-assign" onclick="switchTab('assign')">Assignments</div>
+  </div>
+
+  <main>
+    <!-- ═══ Users panel ═══ -->
+    <div class="panel active" id="panel-users">
+      <div class="card">
+        <h2>Create user</h2>
+        <div id="userMsg" class="msg"></div>
+        <div class="row">
+          <div><label>Username</label><input id="newUsername" placeholder="e.g. ahmed.k"></div>
+          <div><label>Full name</label><input id="newFullName" placeholder="Full name"></div>
+        </div>
+        <div class="row">
+          <div><label>Password</label><input id="newPassword" type="password" placeholder="At least 8 characters"></div>
+          <div><label>Role</label>
+            <select id="newRole" onchange="toggleStorageChecklist()">
+              <option value="worker">worker</option>
+              <option value="admin">admin</option>
+              <option value="ceo">ceo</option>
+            </select>
+          </div>
+        </div>
+        <div id="newUserStorageWrap">
+          <label>Assign to storage(s)</label>
+          <div class="checklist" id="newUserStorageList"></div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="primary" id="createUserBtn" onclick="handleCreateUser()">Create user</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>All users</h2>
+        <table>
+          <thead><tr><th>Username</th><th>Full name</th><th>Role</th><th>Storages</th></tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ Storages panel ═══ -->
+    <div class="panel" id="panel-storages">
+      <div class="card">
+        <h2>Create storage</h2>
+        <div id="storageMsg" class="msg"></div>
+        <div class="row">
+          <div><label>Storage name</label><input id="newStorageName" placeholder="e.g. مخزن المعادي"></div>
+        </div>
+        <button class="primary" onclick="handleCreateStorage()">Create storage</button>
+      </div>
+      <div class="card">
+        <h2>All storages</h2>
+        <table>
+          <thead><tr><th>Name</th><th>Users assigned</th><th></th></tr></thead>
+          <tbody id="storagesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ Assignments panel ═══ -->
+    <div class="panel" id="panel-assign">
+      <div class="card">
+        <h2>Assign users to storages</h2>
+        <p style="font-size:13px;color:var(--muted);margin-top:0">Pick a user, then check off which storages they should have access to. A user can belong to more than one storage.</p>
+        <div id="assignMsg" class="msg"></div>
+        <label>User</label>
+        <select id="assignUserSelect" onchange="renderAssignChecklist()"></select>
+        <div class="checklist" id="assignChecklist" style="margin-top:10px"></div>
+        <div style="margin-top:14px">
+          <button class="primary" onclick="handleSaveAssignments()">Save assignments</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<script src="data.js"></script>
+<script src="shared-auth-check.js"></script>
+<script>
+let allUsers = [];
+let allStorages = [];
+let allAssignments = []; // [{ user_id, storage_id }]
+
+async function init() {
+  const profile = await requireRole('admin');
+  if (!profile) return;
+  document.getElementById('loadingGate').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'block';
+  await loadAll();
+}
+
+async function loadAll() {
+  const [{ data: users }, { data: storages }, { data: assignments }] = await Promise.all([
+    supabase.from('profiles').select('id, username, full_name, role'),
+    supabase.from('storages').select('id, name').order('name'),
+    supabase.from('user_storages').select('user_id, storage_id')
+  ]);
+  allUsers = users || [];
+  allStorages = storages || [];
+  allAssignments = assignments || [];
+  renderUsersTable();
+  renderStoragesTable();
+  renderNewUserStorageList();
+  renderAssignUserSelect();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ─── Users ───────────────────────────────────────────────────
+function toggleStorageChecklist() {
+  document.getElementById('newUserStorageWrap').style.display =
+    document.getElementById('newRole').value === 'worker' ? 'block' : 'none';
+}
+
+function renderNewUserStorageList() {
+  const el = document.getElementById('newUserStorageList');
+  el.innerHTML = allStorages.map(s =>
+    `<label><input type="checkbox" value="${s.id}"> ${escapeHtmlAdmin(s.name)}</label>`
+  ).join('');
+}
+
+function renderUsersTable() {
+  const body = document.getElementById('usersTableBody');
+  body.innerHTML = allUsers.map(u => {
+    const storageNames = allAssignments
+      .filter(a => a.user_id === u.id)
+      .map(a => allStorages.find(s => s.id === a.storage_id)?.name)
+      .filter(Boolean).join(', ') || '—';
+    return `<tr>
+      <td>${escapeHtmlAdmin(u.username)}</td>
+      <td>${escapeHtmlAdmin(u.full_name)}</td>
+      <td><span class="badge ${u.role}">${u.role}</span></td>
+      <td>${u.role === 'worker' ? escapeHtmlAdmin(storageNames) : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function handleCreateUser() {
+  const username = document.getElementById('newUsername').value.trim();
+  const fullName = document.getElementById('newFullName').value.trim();
+  const password = document.getElementById('newPassword').value;
+  const role = document.getElementById('newRole').value;
+  const storageIds = [...document.querySelectorAll('#newUserStorageList input:checked')].map(i => i.value);
+  const msg = document.getElementById('userMsg');
+  msg.className = 'msg'; msg.style.display = 'none';
+
+  if (!username || !fullName || !password) {
+    msg.textContent = 'Please fill in username, full name, and password.';
+    msg.className = 'msg error'; return;
+  }
+
+  const btn = document.getElementById('createUserBtn');
+  btn.disabled = true;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/functions/v1/create-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token
+      },
+      body: JSON.stringify({ username, password, fullName, role, storageIds })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to create user');
+
+    msg.textContent = 'User created successfully.';
+    msg.className = 'msg success';
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newFullName').value = '';
+    document.getElementById('newPassword').value = '';
+    document.querySelectorAll('#newUserStorageList input').forEach(i => i.checked = false);
+    await loadAll();
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = 'msg error';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ─── Storages ────────────────────────────────────────────────
+function renderStoragesTable() {
+  const body = document.getElementById('storagesTableBody');
+  body.innerHTML = allStorages.map(s => {
+    const count = allAssignments.filter(a => a.storage_id === s.id).length;
+    return `<tr>
+      <td>${escapeHtmlAdmin(s.name)}</td>
+      <td>${count}</td>
+      <td><button class="danger" onclick="handleDeleteStorage('${s.id}')">Delete</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function handleCreateStorage() {
+  const name = document.getElementById('newStorageName').value.trim();
+  const msg = document.getElementById('storageMsg');
+  msg.className = 'msg'; msg.style.display = 'none';
+  if (!name) { msg.textContent = 'Please enter a storage name.'; msg.className = 'msg error'; return; }
+  const { error } = await supabase.from('storages').insert({ name });
+  if (error) { msg.textContent = error.message; msg.className = 'msg error'; return; }
+  document.getElementById('newStorageName').value = '';
+  msg.textContent = 'Storage created.'; msg.className = 'msg success';
+  await loadAll();
+}
+
+async function handleDeleteStorage(id) {
+  if (!confirm('Delete this storage? This also removes all its items, categories, and logs. This cannot be undone.')) return;
+  const { error } = await supabase.from('storages').delete().eq('id', id);
+  if (error) { alert(error.message); return; }
+  await loadAll();
+}
+
+// ─── Assignments ─────────────────────────────────────────────
+function renderAssignUserSelect() {
+  const sel = document.getElementById('assignUserSelect');
+  const workers = allUsers.filter(u => u.role === 'worker');
+  sel.innerHTML = workers.map(u => `<option value="${u.id}">${escapeHtmlAdmin(u.full_name)} (${escapeHtmlAdmin(u.username)})</option>`).join('');
+  renderAssignChecklist();
+}
+
+function renderAssignChecklist() {
+  const userId = document.getElementById('assignUserSelect').value;
+  const assigned = new Set(allAssignments.filter(a => a.user_id === userId).map(a => a.storage_id));
+  document.getElementById('assignChecklist').innerHTML = allStorages.map(s =>
+    `<label><input type="checkbox" value="${s.id}" ${assigned.has(s.id) ? 'checked' : ''}> ${escapeHtmlAdmin(s.name)}</label>`
+  ).join('');
+}
+
+async function handleSaveAssignments() {
+  const userId = document.getElementById('assignUserSelect').value;
+  const checked = [...document.querySelectorAll('#assignChecklist input:checked')].map(i => i.value);
+  const msg = document.getElementById('assignMsg');
+  msg.className = 'msg'; msg.style.display = 'none';
+  if (!userId) return;
+
+  // Simplest correct approach: replace this user's assignment rows entirely.
+  const { error: delErr } = await supabase.from('user_storages').delete().eq('user_id', userId);
+  if (delErr) { msg.textContent = delErr.message; msg.className = 'msg error'; return; }
+  if (checked.length > 0) {
+    const { error: insErr } = await supabase.from('user_storages')
+      .insert(checked.map(storageId => ({ user_id: userId, storage_id: storageId })));
+    if (insErr) { msg.textContent = insErr.message; msg.className = 'msg error'; return; }
+  }
+  msg.textContent = 'Assignments saved.'; msg.className = 'msg success';
+  await loadAll();
+}
+
+// ─── Utils ───────────────────────────────────────────────────
+function escapeHtmlAdmin(str) {
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : str;
+  return div.innerHTML;
+}
+async function handleLogout() { await signOut(); window.location.href = 'index.html'; }
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
