@@ -2,32 +2,28 @@
 // storagebeebee — auth.js
 // Include via <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 // BEFORE this file, same pattern as your existing idb/Chart.js includes.
+//
+// Uses `var` (not const/let) for top-level declarations on purpose:
+// var declarations are (a) truly global — visible to data.js and to
+// index.html's own inline script, and (b) safe to redeclare, so if this
+// file ever gets accidentally included twice it won't crash the page.
 // ══════════════════════════════════════════════════════════════
 
-// Guard against this file being included twice on the same page (e.g. one
-// leftover <script> tag from a manual edit plus the one in the build) —
-// without this, a second inclusion would crash with "Identifier 'supabase'
-// has already been declared" and silently break the whole login screen.
-if (window.__authJsLoaded) {
-  console.warn('auth.js was included more than once on this page — ignoring the extra copy. Check your <script> tags.');
-} else {
-window.__authJsLoaded = true;
-
-const SUPABASE_URL = 'https://wafwmjujtgapzmbwdexg.supabase.co'; // fill in from your Supabase project settings
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhZndtanVqdGdhcHptYndkZXhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjc4MjQsImV4cCI6MjEwMzkwMzgyNH0.h9ltZ3rk5sgfS_TDu9-f1KFW-K2snlLvr3GGsYoZvv0';
+var SUPABASE_URL = 'https://wafwmjujtgapzmbwdexg.supabase.co'; // bare project URL only — do NOT add /rest/v1/ or any path after .co
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhZndtanVqdGdhcHptYndkZXhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjc4MjQsImV4cCI6MjEwMzkwMzgyNH0.h9ltZ3rk5sgfS_TDu9-f1KFW-K2snlLvr3GGsYoZvv0';                // safe to expose client-side — RLS does the real protection
 
 // Workers log in with a username/employee ID, not a real email — Supabase
 // Auth requires an email internally though, so we build a fake one from the
 // username. Workers never see this; the login screen just shows "username".
-const FAKE_EMAIL_DOMAIN = 'storagebeebee.local';
+var FAKE_EMAIL_DOMAIN = 'storagebeebee.local';
 function usernameToFakeEmail(username) {
-  return `${username.trim().toLowerCase()}@${FAKE_EMAIL_DOMAIN}`;
+  return username.trim().toLowerCase() + '@' + FAKE_EMAIL_DOMAIN;
 }
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const ACTIVE_STORAGE_KEY = 'wh-active-storage-id';
-const ACTIVE_STORAGE_NAME_KEY = 'wh-active-storage-name';
+var ACTIVE_STORAGE_KEY = 'wh-active-storage-id';
+var ACTIVE_STORAGE_NAME_KEY = 'wh-active-storage-name';
 
 // ─── Sign in ─────────────────────────────────────────────────
 // `username` is whatever the admin assigned when creating the account
@@ -121,5 +117,3 @@ function requireActiveStorageId() {
   if (!id) throw new Error('No active storage selected — send the user back to login.');
   return id;
 }
-
-} // end double-inclusion guard
