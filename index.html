@@ -949,7 +949,7 @@
       const saveBtn = document.getElementById('saveBtn');
       saveBtn.disabled = true;
       try {
-        let imageUrl = editingItem ? editingItem.imageDataUrl : null;
+        let imageUrl = editingItem ? editingItem.imagePath : null; // imagePath = raw storage path, safe to write back; imageDataUrl is a temporary signed URL, never store it
         if (pendingImageFile) {
           imageUrl = await uploadItemImage(pendingImageFile, editingItem ? editingItem.id : null);
         }
@@ -1101,7 +1101,7 @@
         if (reason === null) return;
       }
 
-      await dbUpdate({ id: item.id, description: item.description, category: item.category, quantity: newQty, imageUrl: item.imageDataUrl });
+      await dbUpdate({ id: item.id, description: item.description, category: item.category, quantity: newQty, imageUrl: item.imagePath });
       await addLog({
         action: delta < 0 ? 'decrease' : 'increase',
         itemDescription: item.description,
@@ -1783,9 +1783,15 @@
     async function initAuth() {
       showAuthOverlay();
       showAuthState('loading');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { showAuthState('login'); return; }
-      await routeAfterAuth();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { showAuthState('login'); return; }
+        await routeAfterAuth();
+      } catch (err) {
+        console.error('Auth init failed:', err);
+        showAuthState('login');
+        showLoginError('تعذّر الاتصال بالخادم. تحقق من إعدادات SUPABASE_URL في auth.js');
+      }
     }
 
     async function routeAfterAuth() {

@@ -7,6 +7,11 @@
 // ══════════════════════════════════════════════════════════════
 
 // ─── Items ───────────────────────────────────────────────────
+// image_url column stores the raw Storage PATH (e.g. "storageId/itemId-123.jpg"),
+// not a public URL — the bucket is private, so a public URL would just 404 for
+// everyone. Display URLs are short-lived signed URLs, generated fresh here.
+const IMAGE_SIGNED_URL_TTL = 3600; // seconds
+
 async function dbGetAll() {
   const storageId = requireActiveStorageId();
   const { data, error } = await supabase
@@ -15,14 +20,31 @@ async function dbGetAll() {
     .eq('storage_id', storageId)
     .order('created_at', { ascending: true });
   if (error) throw error;
-  // Flatten so the rest of the app can keep using item.category / item.imageDataUrl / item.createdAt
+
+  const paths = data.filter(row => row.image_url).map(row => row.image_url);
+  let signedByPath = {};
+  if (paths.length > 0) {
+    const { data: signedList, error: signErr } = await supabase.storage
+      .from('item-images')
+      .createSignedUrls(paths, IMAGE_SIGNED_URL_TTL);
+    if (!signErr && signedList) {
+      signedList.forEach(entry => {
+        if (entry.signedUrl) signedByPath[entry.path] = entry.signedUrl;
+      });
+    }
+  }
+
+  // Flatten so the rest of the app can keep using item.category / item.imageDataUrl / item.createdAt.
+  // imagePath is the raw DB value — keep and reuse this (not imageDataUrl) whenever
+  // saving an item with an unchanged image, since imageDataUrl is a temporary signed URL.
   return data.map(row => ({
     id: row.id,
     description: row.description,
     category: row.categories ? row.categories.name : '',
     categoryId: row.category_id,
     quantity: row.quantity,
-    imageDataUrl: row.image_url,   // now a Storage URL, not a base64 string — <img> tags don't care
+    imagePath: row.image_url || null,
+    imageDataUrl: row.image_url ? (signedByPath[row.image_url] || null) : null,
     createdAt: row.created_at
   }));
 }
@@ -38,7 +60,7 @@ async function dbAdd(item) {
       description: item.description,
       category_id: categoryId,
       quantity: item.quantity,
-      image_url: item.imageUrl || null,
+      image_url: item.imageUrl || null, // "imageUrl" here is actually the storage path — see uploadItemImage()
       created_by: user.id
     })
     .select()
@@ -55,7 +77,7 @@ async function dbUpdate(item) {
       description: item.description,
       category_id: categoryId,
       quantity: item.quantity,
-      image_url: item.imageUrl !== undefined ? item.imageUrl : undefined,
+      image_url: item.imageUrl !== undefined ? item.imageUrl : undefined, // path, not URL — see uploadItemImage()
       updated_at: new Date().toISOString()
     })
     .eq('id', item.id);
@@ -151,6 +173,8 @@ async function getLogs(filters = {}) {
 // ─── Image upload to Supabase Storage ──────────────────────────
 // Replaces the old canvas-resize-to-base64 flow. Still resizes client-side
 // first (keeps uploads small/fast), then uploads the resized blob.
+// Returns the STORAGE PATH (not a URL) — the bucket is private, so display
+// URLs must be short-lived signed URLs generated at read time (see dbGetAll).
 async function uploadItemImage(file, existingItemId) {
   const storageId = requireActiveStorageId();
   const resizedBlob = await resizeImageToBlob(file, 800, 0.75);
@@ -160,10 +184,7 @@ async function uploadItemImage(file, existingItemId) {
     upsert: false
   });
   if (error) throw error;
-  const { data } = supabase.storage.from('item-images').getPublicUrl(path);
-  // Bucket is private, so getPublicUrl's URL only resolves for someone whose
-  // session passes the storage.objects RLS policies above — safe to store as-is.
-  return data.publicUrl;
+  return path;
 }
 
 function resizeImageToBlob(file, maxDim, quality) {
