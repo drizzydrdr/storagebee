@@ -1249,23 +1249,23 @@
           ? '<img src="' + item.imageDataUrl + '" alt="صورة">'
           : '<div class="img-placeholder">📦</div>';
         return (
-          '<div class="item-card' + selClass + '" onclick="toggleSelect(' + id + ')">' +
-            '<input type="checkbox" class="card-check" ' + checked + ' onclick="event.stopPropagation();toggleSelect(' + id + ')">' +
+          '<div class="item-card' + selClass + '" onclick="toggleSelect(\'' + id + '\')">' +
+            '<input type="checkbox" class="card-check" ' + checked + ' onclick="event.stopPropagation();toggleSelect(\'' + id + '\')">' +
             '<div class="card-img">' + imgHtml + '</div>' +
             '<div class="card-info">' +
               '<div class="card-desc">' + escapeHtml(item.description) + '</div>' +
               (item.category ? '<div class="card-cat">' + catSpan(item.category) + '</div>' : '') +
               '<div class="qty-ctrl">' +
-                '<button class="qty-ctrl-btn" onclick="event.stopPropagation();changeQty(' + id + ',-1)">−</button>' +
+                '<button class="qty-ctrl-btn" onclick="event.stopPropagation();changeQty(\'' + id + '\',-1)">−</button>' +
                 '<span class="qty-badge">' + item.quantity + '</span>' +
-                '<button class="qty-ctrl-btn" onclick="event.stopPropagation();changeQty(' + id + ',1)">+</button>' +
+                '<button class="qty-ctrl-btn" onclick="event.stopPropagation();changeQty(\'' + id + '\',1)">+</button>' +
                 '<span class="qty-label">وحدة</span>' +
               '</div>' +
               '<div class="card-date">' + formatDate(item.createdAt) + '</div>' +
             '</div>' +
             '<div class="card-actions">' +
-              '<button class="btn-edit"   onclick="event.stopPropagation();openEditById(' + id + ')" title="تعديل">✏️</button>' +
-              '<button class="btn-delete" onclick="event.stopPropagation();confirmDelete(' + id + ')" title="حذف">✕</button>' +
+              '<button class="btn-edit"   onclick="event.stopPropagation();openEditById(\'' + id + '\')" title="تعديل">✏️</button>' +
+              '<button class="btn-delete" onclick="event.stopPropagation();confirmDelete(\'' + id + '\')" title="حذف">✕</button>' +
             '</div>' +
           '</div>'
         );
