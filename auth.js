@@ -4,7 +4,7 @@
 // BEFORE this file, same pattern as your existing idb/Chart.js includes.
 // ══════════════════════════════════════════════════════════════
 
-const SUPABASE_URL = 'https://wafwmjujtgapzmbwdexg.supabase.co/rest/v1/'; // fill in from your Supabase project settings
+const SUPABASE_URL = 'https://wafwmjujtgapzmbwdexg.supabase.co'; // fill in from your Supabase project settings
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhZndtanVqdGdhcHptYndkZXhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjc4MjQsImV4cCI6MjEwMzkwMzgyNH0.h9ltZ3rk5sgfS_TDu9-f1KFW-K2snlLvr3GGsYoZvv0';                // safe to expose client-side — RLS does the real protection
 
 // Workers log in with a username/employee ID, not a real email — Supabase
