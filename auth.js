@@ -4,8 +4,18 @@
 // BEFORE this file, same pattern as your existing idb/Chart.js includes.
 // ══════════════════════════════════════════════════════════════
 
+// Guard against this file being included twice on the same page (e.g. one
+// leftover <script> tag from a manual edit plus the one in the build) —
+// without this, a second inclusion would crash with "Identifier 'supabase'
+// has already been declared" and silently break the whole login screen.
+if (window.__authJsLoaded) {
+  console.warn('auth.js was included more than once on this page — ignoring the extra copy. Check your <script> tags.');
+} else {
+window.__authJsLoaded = true;
+
 const SUPABASE_URL = 'https://wafwmjujtgapzmbwdexg.supabase.co'; // fill in from your Supabase project settings
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhZndtanVqdGdhcHptYndkZXhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjc4MjQsImV4cCI6MjEwMzkwMzgyNH0.h9ltZ3rk5sgfS_TDu9-f1KFW-K2snlLvr3GGsYoZvv0';                // safe to expose client-side — RLS does the real protection
+
 
 // Workers log in with a username/employee ID, not a real email — Supabase
 // Auth requires an email internally though, so we build a fake one from the
@@ -112,3 +122,5 @@ function requireActiveStorageId() {
   if (!id) throw new Error('No active storage selected — send the user back to login.');
   return id;
 }
+
+} // end double-inclusion guard
