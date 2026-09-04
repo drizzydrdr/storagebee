@@ -3,77 +3,211 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>storagebeebee — Executive Dashboard</title>
+<title>Bee Group — Executive Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
   :root {
-    --navy: #0d1b35; --gold: #c9a84c;
-    --bg: #f4f5f7; --white: #fff; --text: #1a2233; --muted: #6b7280; --border: #e2e5ea;
+    --gold: #c9a84c; --gold-dark: #a07830; --gold-light: #e8d5a3;
+    --bg: #000; --panel: #121212; --panel-2: #171717; --border: #262626;
+    --text: #f2f2f2; --muted: #8a8a8a; --danger: #e08080; --ok: #7bc98f;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
-  header { background: var(--navy); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
-  header h1 { font-size: 17px; margin: 0; font-weight: 800; }
-  header .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; margin-inline-end:6px; box-shadow: 0 0 0 3px rgba(34,197,94,0.25); }
-  header button { background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
-  main { max-width: 1000px; margin: 24px auto; padding: 0 24px; }
-  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
-  .summary-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-  .summary-card .label { font-size: 12px; color: var(--muted); font-weight: 600; }
-  .summary-card .value { font-size: 26px; font-weight: 900; margin-top: 4px; }
-  .storage-list { display: grid; gap: 12px; }
-  .storage-card { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; cursor: pointer; }
-  .storage-card:hover { border-color: var(--gold); }
-  .storage-card-top { display: flex; justify-content: space-between; align-items: center; }
-  .storage-name { font-weight: 800; font-size: 15px; }
-  .storage-stats { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  .detail-panel { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-top: 16px; display: none; }
-  .detail-panel.open { display: block; }
-  .detail-panel h2 { font-size: 15px; margin: 0 0 12px; }
+  body {
+    margin: 0; font-family: 'Jost', Arial, sans-serif;
+    background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased;
+  }
+  #loadingGate { padding: 80px; text-align: center; color: var(--muted); font-size: 14px; }
+
+  .shell { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px; flex-shrink: 0; background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 28px 0;
+  }
+  .brand { padding: 0 24px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .brand-name { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; }
+  .brand-sub { font-size: 11px; color: var(--muted); margin-top: 3px; letter-spacing: 0.4px; }
+  .nav-item {
+    padding: 12px 24px; font-size: 14px; font-weight: 500; color: var(--muted);
+    cursor: pointer; border-right: 2px solid transparent; transition: color .15s, border-color .15s;
+  }
+  .nav-item:hover { color: var(--text); }
+  .nav-item.active { color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,0.05); }
+  .sidebar-spacer { flex: 1; }
+  .logout-item { padding: 12px 24px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  .logout-item:hover { color: var(--danger); }
+
+  .main { flex: 1; padding: 32px 40px 60px; max-width: 1180px; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+  .page-title { font-size: 22px; font-weight: 600; letter-spacing: 0.2px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  select, input[type="text"] {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Jost', Arial, sans-serif; font-size: 13px; padding: 9px 14px;
+    border-radius: 8px; outline: none;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--gold); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .kpi-label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.4px; text-transform: uppercase; }
+  .kpi-value { font-size: 30px; font-weight: 700; margin-top: 8px; color: var(--text); }
+  .kpi-value.gold { color: var(--gold); }
+
+  .section { margin-bottom: 30px; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .shell { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; padding: 14px 0; overflow-x: auto; } .brand { display: none; } .sidebar-spacer { display: none; } .main { padding: 24px 18px 60px; } }
+  .chart-wrap { position: relative; height: 240px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 24px 0; text-align: center; }
+
+  .compare-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .compare-name { width: 130px; font-size: 13px; color: var(--text); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .compare-bar-track { flex: 1; background: var(--panel-2); border-radius: 6px; height: 10px; overflow: hidden; }
+  .compare-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); border-radius: 6px; }
+  .compare-val { width: 46px; text-align: right; font-size: 12px; color: var(--muted); flex-shrink: 0; }
+
+  .attn-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .attn-item:last-child { border-bottom: none; }
+  .attn-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .attn-dot.warn { background: var(--gold); }
+  .attn-dot.alert { background: var(--danger); }
+  .attn-text { font-size: 13px; line-height: 1.5; }
+  .attn-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .ai-panel {
+    background: linear-gradient(135deg, #151109 0%, var(--panel) 60%);
+    border: 1px solid rgba(201,168,76,0.3); border-radius: 12px; padding: 20px 22px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .ai-panel:hover { border-color: var(--gold); }
+  .ai-panel-label { font-size: 11px; color: var(--gold); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .ai-panel-text { font-size: 14px; line-height: 1.6; color: var(--text); min-height: 22px; }
+  .ai-panel-hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
-  th { color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
-  .tabs-inner { display: flex; gap: 16px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
-  .tabs-inner div { padding-bottom: 8px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
-  .tabs-inner div.active { color: var(--navy); border-color: var(--gold); }
-  #loadingGate { padding: 60px; text-align: center; color: var(--muted); }
-  .empty { color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; }
+  .filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .action-tag { padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
+  .action-tag.add, .action-tag.increase { background: rgba(123,201,143,0.12); color: var(--ok); }
+  .action-tag.decrease, .action-tag.delete { background: rgba(224,128,128,0.12); color: var(--danger); }
+  .action-tag.edit { background: rgba(201,168,76,0.12); color: var(--gold); }
+
+  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 140px); max-height: 720px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 8px 4px 20px; }
+  .msg { max-width: 72%; margin-bottom: 14px; padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.55; }
+  .msg.user { background: var(--gold); color: #000; margin-left: auto; border-bottom-right-radius: 4px; }
+  .msg.assistant { background: var(--panel-2); border: 1px solid var(--border); margin-right: auto; border-bottom-left-radius: 4px; }
+  .msg.thinking { color: var(--muted); font-style: italic; }
+  .chat-input-row { display: flex; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .chat-input-row input { flex: 1; padding: 13px 16px; }
+  .chat-input-row button {
+    background: var(--gold); color: #000; border: none; border-radius: 8px;
+    padding: 0 22px; font-family: 'Jost', Arial, sans-serif; font-weight: 600; font-size: 13px; cursor: pointer;
+  }
+  .chat-input-row button:disabled { opacity: 0.5; }
+  .chat-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 60px 20px; }
 </style>
 </head>
 <body>
 
 <div id="loadingGate">Checking access…</div>
 
-<div id="ceoApp" style="display:none">
-  <header>
-    <h1><span class="live-dot"></span>storagebeebee — Executive Dashboard</h1>
-    <button onclick="handleLogout()">Log out</button>
-  </header>
+<div id="ceoApp" class="shell" style="display:none">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-name">Bee Group</div>
+      <div class="brand-sub">Executive Dashboard</div>
+    </div>
+    <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">Overview</div>
+    <div class="nav-item" data-tab="logs" onclick="switchTab('logs')">Logs</div>
+    <div class="nav-item" data-tab="ai" onclick="switchTab('ai')">AI Assistant</div>
+    <div class="sidebar-spacer"></div>
+    <div class="logout-item" onclick="handleLogout()">Log Out</div>
+  </div>
 
-  <main>
-    <div class="summary-grid" id="summaryGrid"></div>
+  <div class="main">
 
-    <div class="storage-list" id="storageList"></div>
-
-    <div class="detail-panel" id="detailPanel">
-      <h2 id="detailTitle"></h2>
-      <div class="tabs-inner">
-        <div class="active" id="dtab-items" onclick="switchDetailTab('items')">Items</div>
-        <div id="dtab-log" onclick="switchDetailTab('log')">Activity Log</div>
+    <div class="tab-panel active" id="panel-overview">
+      <div class="page-head">
+        <div class="page-title">Overview</div>
+        <select id="storageFilter" onchange="onFilterChange()"></select>
       </div>
-      <div id="ditems">
-        <table>
-          <thead><tr><th>Description</th><th>Category</th><th>Quantity</th></tr></thead>
-          <tbody id="itemsTableBody"></tbody>
-        </table>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="section">
+        <div class="ai-panel" onclick="goToAiFromInsight()">
+          <div class="ai-panel-label">AI Insight</div>
+          <div class="ai-panel-text" id="insightText">Loading…</div>
+          <div class="ai-panel-hint">Ask the AI Assistant anything about your storages →</div>
+        </div>
       </div>
-      <div id="dlog" style="display:none">
+
+      <div class="two-col section">
+        <div class="card">
+          <div class="section-title">Units by Category</div>
+          <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Item Types by Category</div>
+          <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="two-col section">
+        <div class="card" id="compareCard">
+          <div class="section-title">Storage Comparison</div>
+          <div id="compareList"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Needs Attention</div>
+          <div id="attentionList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-logs">
+      <div class="page-head"><div class="page-title">Activity Logs</div></div>
+      <div class="filter-row">
+        <select id="logStorageFilter" onchange="loadLogs()"></select>
+        <select id="logActionFilter" onchange="loadLogs()">
+          <option value="">All Actions</option>
+          <option value="add">Add</option>
+          <option value="edit">Edit</option>
+          <option value="increase">Increase</option>
+          <option value="decrease">Decrease</option>
+          <option value="delete">Delete</option>
+        </select>
+      </div>
+      <div class="card">
         <table>
-          <thead><tr><th>Action</th><th>Item</th><th>Details</th><th>Reason</th><th>By</th><th>When</th></tr></thead>
-          <tbody id="logTableBody"></tbody>
+          <thead><tr><th>Action</th><th>Item</th><th>Storage</th><th>Details</th><th>Reason</th><th>By</th><th>When</th></tr></thead>
+          <tbody id="logsTableBody"></tbody>
         </table>
       </div>
     </div>
-  </main>
+
+    <div class="tab-panel" id="panel-ai">
+      <div class="page-head"><div class="page-title">AI Assistant</div></div>
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-empty" id="chatEmpty">Ask about quantities, categories, recent activity, or anything else across your storages.</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Ask a question…" onkeydown="if(event.key==='Enter')sendChatMessage()">
+          <button id="chatSendBtn" onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -81,101 +215,272 @@
 <script src="data.js"></script>
 <script src="shared-auth-check.js"></script>
 <script>
-let storages = [];
-let activeStorageId = null;
-let refreshTimer = null;
+let allStorages = [];
+let allItems = [];
+let allLogsRecent = [];
+let pieChartInst = null, barChartInst = null;
+let chatHistory = [];
+const CHART_COLORS = ['#c9a84c','#e8d5a3','#8a8a8a','#7bc98f','#e08080','#a07830','#5a6a85','#3d6b4f'];
 
 async function init() {
   const profile = await requireRole('ceo');
   if (!profile) return;
   document.getElementById('loadingGate').style.display = 'none';
-  document.getElementById('ceoApp').style.display = 'block';
-  await loadDashboard();
-  // "Live" via periodic refresh — simple and reliable; can be swapped for
-  // a Supabase Realtime subscription later if true push updates are wanted.
-  refreshTimer = setInterval(loadDashboard, 15000);
+  document.getElementById('ceoApp').style.display = 'flex';
+  await loadOverview();
+  loadInsight();
+  setInterval(loadOverview, 30000);
 }
 
-async function loadDashboard() {
-  const { data: storageRows } = await supabase.from('storages').select('id, name').order('name');
-  storages = storageRows || [];
-
-  const { data: items } = await supabase.from('items').select('storage_id, quantity');
-  const statsByStorage = {};
-  storages.forEach(s => statsByStorage[s.id] = { itemCount: 0, totalUnits: 0 });
-  (items || []).forEach(item => {
-    if (!statsByStorage[item.storage_id]) return;
-    statsByStorage[item.storage_id].itemCount++;
-    statsByStorage[item.storage_id].totalUnits += Number(item.quantity) || 0;
-  });
-
-  renderSummary(statsByStorage);
-  renderStorageList(statsByStorage);
-  if (activeStorageId) await loadDetail(activeStorageId);
+function switchTab(name) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'logs') loadLogs();
+  if (name === 'ai') document.getElementById('chatInput').focus();
 }
 
-function renderSummary(statsByStorage) {
-  const totalStorages = storages.length;
-  const totalItems = Object.values(statsByStorage).reduce((a, s) => a + s.itemCount, 0);
-  const totalUnits = Object.values(statsByStorage).reduce((a, s) => a + s.totalUnits, 0);
-  document.getElementById('summaryGrid').innerHTML = `
-    <div class="summary-card"><div class="label">Storages</div><div class="value">${totalStorages}</div></div>
-    <div class="summary-card"><div class="label">Total item types</div><div class="value">${totalItems}</div></div>
-    <div class="summary-card"><div class="label">Total units</div><div class="value">${totalUnits}</div></div>
+async function loadOverview() {
+  const { data: storages } = await supabase.from('storages').select('id, name').order('name');
+  allStorages = storages || [];
+  const { data: items } = await supabase.from('items').select('storage_id, quantity, categories(name)');
+  allItems = items || [];
+  const { data: logs } = await supabase.from('logs')
+    .select('action, item_description, details, reason, quantity_before, quantity_after, created_at, storage_id, storages(name)')
+    .order('created_at', { ascending: false }).limit(300);
+  allLogsRecent = logs || [];
+
+  populateStorageFilter();
+  renderOverviewForFilter();
+}
+
+function populateStorageFilter() {
+  const sel = document.getElementById('storageFilter');
+  const current = sel.value || '';
+  sel.innerHTML = '<option value="">All Storages</option>' +
+    allStorages.map(s => `<option value="${s.id}">${escapeHtmlCeo(s.name)}</option>`).join('');
+  sel.value = current;
+
+  const logSel = document.getElementById('logStorageFilter');
+  const logCurrent = logSel.value || '';
+  logSel.innerHTML = '<option value="">All Storages</option>' +
+    allStorages.map(s => `<option value="${s.id}">${escapeHtmlCeo(s.name)}</option>`).join('');
+  logSel.value = logCurrent;
+}
+
+function onFilterChange() { renderOverviewForFilter(); }
+
+function renderOverviewForFilter() {
+  const filterId = document.getElementById('storageFilter').value;
+  const items = filterId ? allItems.filter(i => i.storage_id === filterId) : allItems;
+  const storagesInView = filterId ? allStorages.filter(s => s.id === filterId) : allStorages;
+
+  renderKpis(items, storagesInView, filterId);
+  renderCharts(items);
+  document.getElementById('compareCard').style.display = filterId ? 'none' : 'block';
+  if (!filterId) renderComparison();
+  renderAttention(filterId);
+}
+
+function renderKpis(items, storagesInView, filterId) {
+  const totalUnits = items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
+  const todayStr = new Date().toDateString();
+  const todaysLogs = allLogsRecent.filter(l =>
+    (!filterId || l.storage_id === filterId) && new Date(l.created_at).toDateString() === todayStr
+  ).length;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Storages</div><div class="kpi-value">${storagesInView.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Item Types</div><div class="kpi-value">${items.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Units</div><div class="kpi-value gold">${totalUnits}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Today's Activity</div><div class="kpi-value">${todaysLogs}</div></div>
   `;
 }
 
-function renderStorageList(statsByStorage) {
-  const el = document.getElementById('storageList');
-  if (storages.length === 0) { el.innerHTML = '<div class="empty">No storages yet.</div>'; return; }
-  el.innerHTML = storages.map(s => {
-    const stats = statsByStorage[s.id] || { itemCount: 0, totalUnits: 0 };
-    return `<div class="storage-card" onclick="openDetail('${s.id}', '${escapeHtmlCeo(s.name)}')">
-      <div class="storage-card-top">
-        <div class="storage-name">${escapeHtmlCeo(s.name)}</div>
-      </div>
-      <div class="storage-stats">${stats.itemCount} item types · ${stats.totalUnits} total units</div>
-    </div>`;
-  }).join('');
+function renderCharts(items) {
+  const byCat = {};
+  items.forEach(i => {
+    const cat = (i.categories && i.categories.name) || 'Uncategorized';
+    if (!byCat[cat]) byCat[cat] = { count: 0, units: 0 };
+    byCat[cat].count++;
+    byCat[cat].units += Number(i.quantity) || 0;
+  });
+  const labels = Object.keys(byCat);
+  const unitVals = labels.map(l => byCat[l].units);
+  const countVals = labels.map(l => byCat[l].count);
+  const colors = labels.map((_, idx) => CHART_COLORS[idx % CHART_COLORS.length]);
+
+  const chartOpts = {
+    plugins: { legend: { labels: { color: '#ccc', font: { family: 'Jost', size: 11 } } } }
+  };
+
+  if (pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: unitVals, backgroundColor: colors, borderColor: '#121212', borderWidth: 2 }] },
+    options: { ...chartOpts, maintainAspectRatio: false }
+  });
+
+  if (barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: countVals, backgroundColor: colors }] },
+    options: {
+      ...chartOpts, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8a8a8a', font: { family: 'Jost', size: 10 } }, grid: { color: '#262626' } },
+        y: { ticks: { color: '#8a8a8a', font: { family: 'Jost', size: 10 } }, grid: { color: '#262626' }, beginAtZero: true }
+      }
+    }
+  });
 }
 
-async function openDetail(storageId, storageName) {
-  activeStorageId = storageId;
-  document.getElementById('detailTitle').textContent = storageName;
-  document.getElementById('detailPanel').classList.add('open');
-  switchDetailTab('items');
-  await loadDetail(storageId);
-  document.getElementById('detailPanel').scrollIntoView({ behavior: 'smooth' });
+function renderComparison() {
+  const totalsByStorage = allStorages.map(s => {
+    const units = allItems.filter(i => i.storage_id === s.id).reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+    return { name: s.name, units };
+  }).sort((a, b) => b.units - a.units);
+  const max = Math.max(1, ...totalsByStorage.map(s => s.units));
+  document.getElementById('compareList').innerHTML = totalsByStorage.length ? totalsByStorage.map(s => `
+    <div class="compare-row">
+      <div class="compare-name">${escapeHtmlCeo(s.name)}</div>
+      <div class="compare-bar-track"><div class="compare-bar-fill" style="width:${(s.units / max * 100).toFixed(0)}%"></div></div>
+      <div class="compare-val">${s.units}</div>
+    </div>
+  `).join('') : '<div class="empty">No storages yet</div>';
 }
 
-function switchDetailTab(name) {
-  document.getElementById('dtab-items').classList.toggle('active', name === 'items');
-  document.getElementById('dtab-log').classList.toggle('active', name === 'log');
-  document.getElementById('ditems').style.display = name === 'items' ? 'block' : 'none';
-  document.getElementById('dlog').style.display = name === 'log' ? 'block' : 'none';
+function renderAttention(filterId) {
+  const items = [];
+  const relevantLogs = allLogsRecent.filter(l => !filterId || l.storage_id === filterId);
+
+  const zeroItems = (filterId ? allItems.filter(i => i.storage_id === filterId) : allItems).filter(i => Number(i.quantity) === 0);
+  if (zeroItems.length > 0) {
+    items.push({ type: 'alert', text: `${zeroItems.length} item${zeroItems.length > 1 ? 's are' : ' is'} at zero stock`, sub: 'Consider restocking or removing' });
+  }
+
+  const weekAgo = Date.now() - 7 * 86400000;
+  relevantLogs.filter(l => l.action === 'decrease' && new Date(l.created_at).getTime() > weekAgo)
+    .sort((a, b) => (Number(b.quantity_before) - Number(b.quantity_after)) - (Number(a.quantity_before) - Number(a.quantity_after)))
+    .slice(0, 3).forEach(l => {
+      const drop = Number(l.quantity_before) - Number(l.quantity_after);
+      if (drop > 0) items.push({
+        type: 'warn',
+        text: `"${l.item_description}" dropped by ${drop} unit${drop > 1 ? 's' : ''}${l.storages ? ' in ' + l.storages.name : ''}`,
+        sub: l.reason ? `Reason: ${l.reason}` : 'No reason given'
+      });
+    });
+
+  relevantLogs.filter(l => l.action === 'delete' && new Date(l.created_at).getTime() > weekAgo)
+    .slice(0, 3).forEach(l => items.push({
+      type: 'warn',
+      text: `"${l.item_description}" was deleted${l.storages ? ' from ' + l.storages.name : ''}`,
+      sub: l.reason ? `Reason: ${l.reason}` : 'No reason given'
+    }));
+
+  document.getElementById('attentionList').innerHTML = items.length
+    ? items.slice(0, 6).map(i => `
+      <div class="attn-item">
+        <div class="attn-dot ${i.type}"></div>
+        <div><div class="attn-text">${escapeHtmlCeo(i.text)}</div><div class="attn-sub">${escapeHtmlCeo(i.sub)}</div></div>
+      </div>`).join('')
+    : '<div class="empty">Nothing needs attention right now</div>';
 }
 
-async function loadDetail(storageId) {
-  const { data: items } = await supabase
-    .from('items').select('description, quantity, categories(name)')
-    .eq('storage_id', storageId).order('description');
-  document.getElementById('itemsTableBody').innerHTML = (items || []).map(i =>
-    `<tr><td>${escapeHtmlCeo(i.description)}</td><td>${escapeHtmlCeo(i.categories ? i.categories.name : '—')}</td><td>${i.quantity}</td></tr>`
-  ).join('') || '<tr><td colspan="3" class="empty">No items</td></tr>';
-
-  const { data: logs } = await supabase
-    .from('logs').select('action, item_description, details, reason, created_at, profiles(full_name, username)')
-    .eq('storage_id', storageId).order('created_at', { ascending: false }).limit(100);
-  document.getElementById('logTableBody').innerHTML = (logs || []).map(l =>
-    `<tr>
-      <td>${l.action}</td>
+async function loadLogs() {
+  const storageId = document.getElementById('logStorageFilter').value;
+  const action = document.getElementById('logActionFilter').value;
+  let q = supabase.from('logs')
+    .select('action, item_description, details, reason, created_at, storages(name), profiles(full_name, username)')
+    .order('created_at', { ascending: false }).limit(200);
+  if (storageId) q = q.eq('storage_id', storageId);
+  if (action) q = q.eq('action', action);
+  const { data } = await q;
+  document.getElementById('logsTableBody').innerHTML = (data || []).map(l => `
+    <tr>
+      <td><span class="action-tag ${l.action}">${l.action}</span></td>
       <td>${escapeHtmlCeo(l.item_description)}</td>
+      <td>${escapeHtmlCeo(l.storages ? l.storages.name : '—')}</td>
       <td>${escapeHtmlCeo(l.details || '—')}</td>
       <td>${escapeHtmlCeo(l.reason || '—')}</td>
       <td>${escapeHtmlCeo(l.profiles ? (l.profiles.full_name || l.profiles.username) : '—')}</td>
       <td>${new Date(l.created_at).toLocaleString()}</td>
-    </tr>`
-  ).join('') || '<tr><td colspan="6" class="empty">No log entries</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="7" class="empty">No log entries</td></tr>';
+}
+
+const INSIGHT_CACHE_KEY = 'ceo-ai-insight-cache';
+const INSIGHT_TTL_MS = 60 * 60 * 1000;
+
+async function loadInsight() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(INSIGHT_CACHE_KEY) || 'null');
+    if (cached && Date.now() - cached.ts < INSIGHT_TTL_MS) {
+      document.getElementById('insightText').textContent = cached.text;
+      return;
+    }
+  } catch (e) {}
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/functions/v1/ceo-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ mode: 'insight' })
+    });
+    const result = await res.json();
+    const text = result.insight || 'No insight available right now.';
+    document.getElementById('insightText').textContent = text;
+    localStorage.setItem(INSIGHT_CACHE_KEY, JSON.stringify({ text, ts: Date.now() }));
+  } catch (e) {
+    document.getElementById('insightText').textContent = 'Ask the assistant anything about your storages.';
+  }
+}
+
+function goToAiFromInsight() { switchTab('ai'); }
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('chatEmpty').style.display = 'none';
+
+  appendMessage('user', text);
+  chatHistory.push({ role: 'user', content: text });
+
+  const thinkingEl = appendMessage('assistant thinking', 'Thinking…');
+  const btn = document.getElementById('chatSendBtn');
+  btn.disabled = true;
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(SUPABASE_URL + '/functions/v1/ceo-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ mode: 'chat', messages: chatHistory })
+    });
+    const result = await res.json();
+    thinkingEl.remove();
+    if (!res.ok) throw new Error(result.error || 'Request failed');
+    appendMessage('assistant', result.reply);
+    chatHistory.push({ role: 'assistant', content: result.reply });
+  } catch (e) {
+    thinkingEl.remove();
+    appendMessage('assistant', 'Something went wrong reaching the assistant. Please try again.');
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+function appendMessage(cls, text) {
+  const wrap = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className = 'msg ' + cls;
+  el.textContent = text;
+  wrap.appendChild(el);
+  wrap.scrollTop = wrap.scrollHeight;
+  return el;
 }
 
 function escapeHtmlCeo(str) {
@@ -185,7 +490,6 @@ function escapeHtmlCeo(str) {
 }
 
 async function handleLogout() {
-  clearInterval(refreshTimer);
   await signOut();
   window.location.href = 'index.html';
 }
