@@ -14,7 +14,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
@@ -248,51 +248,80 @@
     }
     .log-clear-btn:active { border-color: var(--danger); color: var(--danger); }
 
-    /* ══ AUTH OVERLAY (login / storage picker / no-access) ══ */
+    /* ══ AUTH OVERLAY (login / storage picker / no-access) — dark, English, Jost ══ */
     #authOverlay {
       position: fixed; inset: 0; z-index: 300;
-      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 55%, var(--navy-light) 100%);
+      background: #000;
       display: flex; align-items: center; justify-content: center;
-      padding: 24px; direction: rtl;
+      padding: 24px; direction: ltr;
+      font-family: 'Jost', Arial, sans-serif;
     }
     .auth-card {
-      background: var(--white); border-radius: var(--radius-lg);
-      box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+      background: #121212; border: 1px solid rgba(201,168,76,0.22);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 50px rgba(201,168,76,0.06);
       width: 100%; max-width: 380px;
-      padding: 32px 28px 28px; text-align: center;
+      padding: 40px 32px 32px; text-align: center;
+      font-family: 'Jost', Arial, sans-serif;
     }
-    .auth-logo { width: 64px; height: 64px; margin: 0 auto 14px; display: block; border-radius: 16px; }
-    .auth-title { font-size: 20px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
-    .auth-subtitle { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 26px; }
-    .auth-field { margin-bottom: 14px; text-align: right; }
-    .auth-field label { display: block; font-weight: 700; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    input[type="password"] {
-      width: 100%; padding: 15px 16px;
-      border: 1.5px solid var(--border); border-radius: var(--radius-md);
-      font-family: 'Cairo', Arial, sans-serif; font-size: 16px; font-weight: 500;
-      color: var(--text); background: var(--white);
-      text-align: right; direction: rtl; -webkit-appearance: none;
+    .auth-logo {
+      width: 88px; height: 88px; object-fit: contain;
+      margin: 0 auto 20px; display: block;
+    }
+    .auth-title {
+      font-size: 21px; font-weight: 600; color: #fff;
+      letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .auth-subtitle {
+      font-size: 13px; color: #8a8a8a; font-weight: 400;
+      letter-spacing: 0.3px; margin-bottom: 30px;
+    }
+    .auth-field { margin-bottom: 16px; text-align: left; }
+    .auth-field label {
+      display: block; font-weight: 500; font-size: 12px; color: #999;
+      margin-bottom: 6px; letter-spacing: 0.3px;
+    }
+    #authOverlay input[type="text"],
+    #authOverlay input[type="password"] {
+      width: 100%; padding: 14px 16px;
+      border: 1px solid #2a2a2a; border-radius: var(--radius-md);
+      font-family: 'Jost', Arial, sans-serif; font-size: 15px; font-weight: 400;
+      color: #fff; background: #1a1a1a;
+      text-align: left; direction: ltr; -webkit-appearance: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-    input[type="password"]:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
-    .auth-error {
-      background: #fdecea; color: var(--danger); border: 1px solid rgba(184,50,50,0.25);
-      border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; font-weight: 600;
-      margin-bottom: 14px; display: none;
+    #authOverlay input[type="text"]:focus,
+    #authOverlay input[type="password"]:focus {
+      outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
     }
-    .auth-submit-btn { margin-top: 6px; margin-bottom: 0; }
-    .auth-submit-btn[disabled] { opacity: 0.6; pointer-events: none; }
+    #authOverlay input::placeholder { color: #555; }
+    .auth-error {
+      background: rgba(184,50,50,0.12); color: #e08080; border: 1px solid rgba(184,50,50,0.3);
+      border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; font-weight: 500;
+      margin-bottom: 16px; display: none; text-align: left;
+    }
+    .auth-submit-btn {
+      margin-top: 8px; margin-bottom: 0;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      color: #000; border: none; font-weight: 600; letter-spacing: 0.4px;
+      font-family: 'Jost', Arial, sans-serif;
+    }
+    .auth-submit-btn[disabled] { opacity: 0.5; pointer-events: none; }
     .storage-option {
       display: flex; align-items: center; justify-content: space-between;
-      background: var(--white); border: 1.5px solid var(--border);
-      border-radius: var(--radius-md); padding: 16px 16px;
-      margin-bottom: 10px; cursor: pointer; text-align: right;
+      background: #1a1a1a; border: 1px solid #2a2a2a;
+      border-radius: var(--radius-md); padding: 16px 18px;
+      margin-bottom: 10px; cursor: pointer; text-align: left;
       transition: border-color 0.15s, background 0.15s;
     }
-    .storage-option:active { border-color: var(--gold); background: var(--gold-pale); }
-    .storage-option-name { font-weight: 800; font-size: 15px; color: var(--text); }
-    .storage-option-arrow { color: var(--gold-dark); font-size: 16px; }
-    .auth-noaccess-icon { font-size: 46px; margin-bottom: 14px; }
+    .storage-option:active { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+    .storage-option-name { font-weight: 500; font-size: 15px; color: #fff; }
+    .storage-option-arrow { color: var(--gold); font-size: 16px; }
+    .auth-noaccess-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.8; }
+    .auth-card .btn-outline {
+      font-family: 'Jost', Arial, sans-serif; background: transparent;
+      color: #ccc; border: 1px solid #2a2a2a;
+    }
     #logoutBtn {
       background: none; border: none; color: rgba(255,255,255,0.55);
       font-size: 13px; font-weight: 700; cursor: pointer; padding: 6px 10px;
@@ -586,36 +615,36 @@
 <!-- ═══ Auth overlay: login / storage picker / no-access ═══ -->
 <div id="authOverlay">
   <div id="authLoading" class="auth-card">
-    <div class="auth-title">جارِ التحقق...</div>
+    <div class="auth-title">Checking session…</div>
   </div>
 
   <form id="authLoginCard" class="auth-card" style="display:none" onsubmit="return handleLoginSubmit(event)">
-    <img src="logo.png" alt="" class="auth-logo">
-    <div class="auth-title">مخازن بي جروب</div>
-    <div class="auth-subtitle">تسجيل الدخول</div>
+    <img src="logo.png" alt="Bee Group" class="auth-logo">
+    <div class="auth-title">Bee Group Warehouses</div>
+    <div class="auth-subtitle">Sign in to continue</div>
     <div id="loginError" class="auth-error"></div>
     <div class="auth-field">
-      <label for="loginUsername">اسم المستخدم</label>
+      <label for="loginUsername">Username</label>
       <input type="text" id="loginUsername" autocomplete="username" required>
     </div>
     <div class="auth-field">
-      <label for="loginPassword">كلمة المرور</label>
+      <label for="loginPassword">Password</label>
       <input type="password" id="loginPassword" autocomplete="current-password" required>
     </div>
-    <button type="submit" id="loginSubmitBtn" class="btn btn-primary auth-submit-btn">دخول</button>
+    <button type="submit" id="loginSubmitBtn" class="btn btn-primary auth-submit-btn">Sign In</button>
   </form>
 
   <div id="authPickerCard" class="auth-card" style="display:none">
-    <div class="auth-title">اختر المخزن</div>
-    <div class="auth-subtitle">لديك صلاحية الوصول لأكثر من مخزن</div>
+    <div class="auth-title">Select a Storage</div>
+    <div class="auth-subtitle">Your account has access to more than one</div>
     <div id="storageOptionList"></div>
   </div>
 
   <div id="authNoAccessCard" class="auth-card" style="display:none">
     <div class="auth-noaccess-icon">🚫</div>
-    <div class="auth-title">لا يوجد صلاحية وصول</div>
-    <div class="auth-subtitle">لم يتم تعيين أي مخزن لحسابك بعد. يرجى التواصل مع المسؤول.</div>
-    <button class="btn btn-outline" onclick="handleLogoutClick()">تسجيل الخروج</button>
+    <div class="auth-title">No Access Assigned</div>
+    <div class="auth-subtitle">Your account hasn't been assigned to a storage yet. Please contact your administrator.</div>
+    <button class="btn btn-outline" onclick="handleLogoutClick()">Log Out</button>
   </div>
 </div>
 
@@ -1809,7 +1838,7 @@
       } catch (err) {
         console.error('Auth init failed:', err);
         showAuthState('login');
-        showLoginError('تعذّر الاتصال بالخادم. تحقق من إعدادات SUPABASE_URL في auth.js');
+        showLoginError('Could not connect to the server. Check SUPABASE_URL in auth.js.');
       }
     }
 
@@ -1819,7 +1848,7 @@
         destination = await resolveLoginDestination();
       } catch (err) {
         console.error(err);
-        showLoginError('حدث خطأ أثناء التحقق من الحساب.');
+        showLoginError('Something went wrong while checking your account.');
         showAuthState('login');
         return;
       }
@@ -1843,7 +1872,7 @@
         row.onclick = () => { chooseStorage(storage); enterMainApp(storage); };
         row.innerHTML =
           '<span class="storage-option-name">' + escapeHtml(storage.name) + '</span>' +
-          '<span class="storage-option-arrow">‹</span>';
+          '<span class="storage-option-arrow">›</span>';
         list.appendChild(row);
       });
     }
@@ -1861,15 +1890,15 @@
       const btn = document.getElementById('loginSubmitBtn');
       hideLoginError();
       btn.disabled = true;
-      btn.textContent = 'جارِ الدخول...';
+      btn.textContent = 'Signing in…';
       try {
         await signIn(username, password);
         await routeAfterAuth();
       } catch (err) {
-        showLoginError('اسم المستخدم أو كلمة المرور غير صحيحة.');
+        showLoginError('Incorrect username or password.');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'دخول';
+        btn.textContent = 'Sign In';
       }
       return false;
     }
