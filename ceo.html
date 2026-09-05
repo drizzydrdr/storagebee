@@ -176,6 +176,19 @@
   .msg.user { background: var(--primary); color: var(--primary-fg); margin-left: auto; border-bottom-right-radius: 4px; }
   .msg.assistant { background: var(--panel-2); border: 1px solid var(--border); margin-right: auto; border-bottom-left-radius: 4px; }
   .msg.thinking { color: var(--muted); font-style: italic; }
+  .msg .msg-p { margin: 0 0 8px; }
+  .msg .msg-p:last-child { margin-bottom: 0; }
+  .msg .msg-h3, .msg .msg-h4, .msg .msg-h5 { font-family: var(--heading-font); font-weight: 700; line-height: 1.3; margin: 14px 0 6px; }
+  .msg .msg-h3:first-child, .msg .msg-h4:first-child, .msg .msg-h5:first-child { margin-top: 0; }
+  .msg .msg-h3 { font-size: 16px; }
+  .msg .msg-h4 { font-size: 14.5px; }
+  .msg .msg-h5 { font-size: 13.5px; }
+  .msg .msg-list { margin: 4px 0 10px; padding-left: 18px; }
+  .msg .msg-list:last-child { margin-bottom: 0; }
+  .msg .msg-list li { margin-bottom: 4px; }
+  .msg code { background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 12.5px; }
+  .msg.user code { background: rgba(0,0,0,0.15); }
+  .msg strong { font-weight: 700; }
   .chat-input-row { display: flex; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
   .chat-input-row input { flex: 1; padding: 13px 16px; }
   .chat-input-row button {
@@ -684,10 +697,61 @@ function appendMessage(cls, text) {
   const wrap = document.getElementById('chatMessages');
   const el = document.createElement('div');
   el.className = 'msg ' + cls;
-  el.textContent = text;
+  if (cls === 'assistant') {
+    el.innerHTML = markdownToHtmlCeo(text);
+  } else {
+    el.textContent = text;
+  }
   wrap.appendChild(el);
   wrap.scrollTop = wrap.scrollHeight;
   return el;
+}
+
+// Small, safe markdown renderer for Bee AI's replies — escapes raw text first
+// (so item names etc. can't inject HTML), then converts the limited markdown
+// subset the system prompt asks it to use: headings, bold, inline code, bullets
+// (including one level of nested bullets).
+function markdownToHtmlCeo(raw) {
+  const escaped = escapeHtmlCeo(raw);
+  const lines = escaped.split(/\r?\n/);
+  let html = '';
+  let listDepth = 0; // 0 = no list open, 1 = top-level <ul>, 2 = nested <ul> open too
+
+  const closeListTo = (depth) => { while (listDepth > depth) { html += '</ul>'; listDepth--; } };
+
+  lines.forEach(rawLine => {
+    const line = rawLine.trim();
+    if (!line) { closeListTo(0); return; }
+
+    const headerMatch = line.match(/^(#{1,4})\s+(.*)$/);
+    if (headerMatch) {
+      closeListTo(0);
+      const tag = 'msg-h' + Math.min(headerMatch[1].length + 2, 5);
+      html += `<div class="${tag}">${inlineMarkdownCeo(headerMatch[2])}</div>`;
+      return;
+    }
+
+    const listMatch = rawLine.match(/^(\s*)[-*]\s+(.*)$/);
+    if (listMatch) {
+      const nested = listMatch[1].length >= 2;
+      const targetDepth = nested ? 2 : 1;
+      if (targetDepth > listDepth) { html += '<ul class="msg-list">'; listDepth++; }
+      else if (targetDepth < listDepth) { closeListTo(targetDepth); }
+      html += `<li>${inlineMarkdownCeo(listMatch[2])}</li>`;
+      return;
+    }
+
+    closeListTo(0);
+    html += `<div class="msg-p">${inlineMarkdownCeo(line)}</div>`;
+  });
+  closeListTo(0);
+  return html || escaped;
+}
+
+function inlineMarkdownCeo(s) {
+  return s
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 }
 
 function escapeHtmlCeo(str) {
