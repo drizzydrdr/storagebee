@@ -14,7 +14,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=Jost:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
@@ -248,86 +248,172 @@
     }
     .log-clear-btn:active { border-color: var(--danger); color: var(--danger); }
 
-    /* ══ AUTH OVERLAY (login / storage picker / no-access) — dark, English, Jost ══ */
+    /* ══ AUTH OVERLAY (login / storage picker / no-access) — matches Bee Group brand reference ══ */
     #authOverlay {
+      --auth-bg: #1F2026;
+      --auth-fg: #FEFFFF;
+      --auth-muted: #B8BBC3;
+      --auth-card: #292B30;
+      --auth-input-bg: #1F2026;
+      --auth-border: #44464D;
+      --auth-primary: #E26A52;
+      --auth-primary-fg: #1F2026;
+      --auth-accent: #365445;
+      --auth-accent-fg: #FEFFFF;
+      --auth-danger: #CC5693;
+      --auth-radius: 20px;
+
       position: fixed; inset: 0; z-index: 300;
-      background: #000;
+      background: var(--auth-bg);
       display: flex; align-items: center; justify-content: center;
-      padding: 24px; direction: ltr;
-      font-family: 'Jost', Arial, sans-serif;
+      overflow: hidden;
+      padding: 24px;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      direction: ltr;
+      font-family: 'Inter', Arial, sans-serif;
     }
-    .auth-card {
-      background: #121212; border: 1px solid rgba(201,168,76,0.22);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 50px rgba(201,168,76,0.06);
+    .auth-bg-decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+    .auth-bg-decor .blob { position: absolute; border-radius: 50%; }
+    .auth-bg-decor .blob-1 {
+      width: 220px; height: 220px; top: -70px; right: -60px;
+      background: var(--auth-accent); opacity: 0.55;
+    }
+    .auth-bg-decor .blob-2 {
+      width: 200px; height: 200px; top: 32%; left: -100px;
+      border: 22px solid var(--auth-primary); opacity: 0.3;
+    }
+    .auth-bg-decor .blob-3 {
+      width: 240px; height: 240px; bottom: -90px; right: -80px;
+      border: 28px solid var(--auth-accent); opacity: 0.55;
+    }
+
+    .auth-shell {
+      position: relative; z-index: 1;
       width: 100%; max-width: 380px;
-      padding: 40px 32px 32px; text-align: center;
-      font-family: 'Jost', Arial, sans-serif;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      color: var(--auth-fg);
     }
-    .auth-logo {
-      width: 88px; height: 88px; object-fit: contain;
-      margin: 0 auto 20px; display: block;
+    .auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .auth-brand-logo {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      padding: 6px; flex-shrink: 0;
     }
-    .auth-title {
-      font-size: 21px; font-weight: 600; color: #fff;
-      letter-spacing: 0.5px; margin-bottom: 6px;
+    .auth-brand-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .auth-brand-eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--auth-muted); margin: 0 0 2px;
     }
-    .auth-subtitle {
-      font-size: 13px; color: #8a8a8a; font-weight: 400;
-      letter-spacing: 0.3px; margin-bottom: 30px;
+    .auth-brand-sub { font-size: 14px; font-weight: 600; color: var(--auth-fg); margin: 0; }
+
+    .auth-hero {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-weight: 700; font-size: 34px; line-height: 1.15;
+      color: var(--auth-fg); margin: 0 0 24px;
     }
+
+    /* Non-login auth cards (loading / picker / no-access) keep a simple centered panel */
+    .auth-card {
+      position: relative; z-index: 1;
+      background: var(--auth-card); border: 1px solid var(--auth-border);
+      border-radius: var(--auth-radius);
+      width: 100%; max-width: 380px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      padding: 28px 24px; text-align: center;
+      color: var(--auth-fg);
+      font-family: 'Inter', Arial, sans-serif;
+    }
+    .auth-title { font-size: 18px; font-weight: 700; color: var(--auth-fg); margin-bottom: 6px; }
+    .auth-subtitle { font-size: 13px; color: var(--auth-muted); font-weight: 400; margin-bottom: 20px; }
+
+    /* Sign-in panel */
+    .auth-panel {
+      background: var(--auth-card); border: 1px solid var(--auth-border);
+      border-radius: var(--auth-radius); padding: 20px;
+    }
+    .auth-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .auth-panel-label { font-size: 15px; font-weight: 700; color: var(--auth-primary); }
+    .auth-panel-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      background: var(--auth-accent); color: var(--auth-accent-fg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .auth-panel-icon svg { width: 20px; height: 20px; }
+
     .auth-field { margin-bottom: 16px; text-align: left; }
     .auth-field label {
-      display: block; font-weight: 500; font-size: 12px; color: #999;
-      margin-bottom: 6px; letter-spacing: 0.3px;
+      display: block; font-weight: 600; font-size: 13px; color: var(--auth-fg);
+      margin-bottom: 8px;
+    }
+    .auth-input-wrap { position: relative; display: flex; align-items: center; }
+    .auth-input-icon {
+      position: absolute; left: 14px; width: 18px; height: 18px;
+      color: var(--auth-muted); pointer-events: none;
     }
     #authOverlay input[type="text"],
     #authOverlay input[type="password"] {
-      width: 100%; padding: 14px 16px;
-      border: 1px solid #2a2a2a; border-radius: var(--radius-md);
-      font-family: 'Jost', Arial, sans-serif; font-size: 15px; font-weight: 400;
-      color: #fff; background: #1a1a1a;
+      width: 100%; min-height: 48px; padding: 12px 16px 12px 44px;
+      border: 1px solid var(--auth-border); border-radius: 14px;
+      font-family: 'Inter', Arial, sans-serif; font-size: 16px; font-weight: 400;
+      color: var(--auth-fg); background: var(--auth-input-bg);
       text-align: left; direction: ltr; -webkit-appearance: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
+    .auth-field:has(.auth-eye-btn) input[type="text"],
+    .auth-field:has(.auth-eye-btn) input[type="password"] {
+      padding-right: 44px;
+    }
     #authOverlay input[type="text"]:focus,
     #authOverlay input[type="password"]:focus {
-      outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+      outline: none; border-color: var(--auth-primary); box-shadow: 0 0 0 3px rgba(226,106,82,0.22);
     }
-    #authOverlay input::placeholder { color: #555; }
+    #authOverlay input::placeholder { color: var(--auth-muted); }
+    .auth-eye-btn {
+      position: absolute; right: 4px; width: 36px; height: 36px;
+      border: none; background: none; color: var(--auth-muted);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .auth-eye-btn:active { color: var(--auth-primary); }
+    .auth-eye-btn svg { width: 18px; height: 18px; }
     .auth-error {
-      background: rgba(184,50,50,0.12); color: #e08080; border: 1px solid rgba(184,50,50,0.3);
-      border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; font-weight: 500;
+      background: rgba(204,86,147,0.14); color: var(--auth-danger); border: 1px solid rgba(204,86,147,0.35);
+      border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 500;
       margin-bottom: 16px; display: none; text-align: left;
     }
     .auth-submit-btn {
-      margin-top: 8px; margin-bottom: 0;
-      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-      color: #000; border: none; font-weight: 600; letter-spacing: 0.4px;
-      font-family: 'Jost', Arial, sans-serif;
+      width: 100%; min-height: 48px; margin-top: 8px; margin-bottom: 0;
+      background: var(--auth-primary); color: var(--auth-primary-fg);
+      border: none; border-radius: 14px; font-weight: 700; font-size: 15px;
+      font-family: 'Inter', Arial, sans-serif;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer;
     }
+    .auth-submit-btn svg { width: 18px; height: 18px; }
     .auth-submit-btn[disabled] { opacity: 0.5; pointer-events: none; }
     .storage-option {
       display: flex; align-items: center; justify-content: space-between;
-      background: #1a1a1a; border: 1px solid #2a2a2a;
-      border-radius: var(--radius-md); padding: 16px 18px;
+      background: var(--auth-input-bg); border: 1px solid var(--auth-border);
+      border-radius: 14px; padding: 16px 18px;
       margin-bottom: 10px; cursor: pointer; text-align: left;
       transition: border-color 0.15s, background 0.15s;
     }
-    .storage-option:active { border-color: var(--gold); background: rgba(201,168,76,0.08); }
-    .storage-option-name { font-weight: 500; font-size: 15px; color: #fff; }
-    .storage-option-arrow { color: var(--gold); font-size: 16px; }
+    .storage-option:active { border-color: var(--auth-primary); background: rgba(226,106,82,0.08); }
+    .storage-option-name { font-weight: 500; font-size: 15px; color: var(--auth-fg); }
+    .storage-option-arrow { color: var(--auth-primary); font-size: 16px; }
     .auth-noaccess-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.8; }
     .auth-card .btn-outline {
-      font-family: 'Jost', Arial, sans-serif; background: transparent;
-      color: #ccc; border: 1px solid #2a2a2a;
+      font-family: 'Inter', Arial, sans-serif; background: transparent;
+      color: var(--auth-fg); border: 1px solid var(--auth-border); border-radius: 14px;
     }
     #logoutBtn {
       background: none; border: none; color: rgba(255,255,255,0.55);
       font-size: 13px; font-weight: 700; cursor: pointer; padding: 6px 10px;
       font-family: 'Cairo', Arial, sans-serif;
     }
-    #logoutBtn:active { color: var(--gold); }
+    #logoutBtn:active { color: #E26A52; }
 
     /* ══ Reason modal ══ */
     #reasonModal {
@@ -614,24 +700,56 @@
 
 <!-- ═══ Auth overlay: login / storage picker / no-access ═══ -->
 <div id="authOverlay">
+  <div class="auth-bg-decor" aria-hidden="true">
+    <span class="blob blob-1"></span>
+    <span class="blob blob-2"></span>
+    <span class="blob blob-3"></span>
+  </div>
+
   <div id="authLoading" class="auth-card">
     <div class="auth-title">Checking session…</div>
   </div>
 
-  <form id="authLoginCard" class="auth-card" style="display:none" onsubmit="return handleLoginSubmit(event)">
-    <img src="logo.png" alt="Bee Group" class="auth-logo">
-    <div class="auth-title">Bee Group Warehouses</div>
-    <div class="auth-subtitle">Sign in to continue</div>
-    <div id="loginError" class="auth-error"></div>
-    <div class="auth-field">
-      <label for="loginUsername">Username</label>
-      <input type="text" id="loginUsername" autocomplete="username" required>
+  <form id="authLoginCard" class="auth-shell" style="display:none" onsubmit="return handleLoginSubmit(event)">
+    <div class="auth-brand">
+      <div class="auth-brand-logo"><img src="logo.png" alt="Bee Group"></div>
+      <div>
+        <p class="auth-brand-eyebrow">Bee Group</p>
+        <p class="auth-brand-sub">Warehouse intelligence</p>
+      </div>
     </div>
-    <div class="auth-field">
-      <label for="loginPassword">Password</label>
-      <input type="password" id="loginPassword" autocomplete="current-password" required>
+    <h1 class="auth-hero">Welcome back</h1>
+
+    <div class="auth-panel">
+      <div class="auth-panel-head">
+        <div class="auth-panel-label">Sign in</div>
+        <div class="auth-panel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-6 9 6v11"/><path d="M9 21v-6h6v6"/></svg>
+        </div>
+      </div>
+      <div id="loginError" class="auth-error"></div>
+      <div class="auth-field">
+        <label for="loginUsername">Username</label>
+        <div class="auth-input-wrap">
+          <svg class="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="loginUsername" autocomplete="username" placeholder="Enter your username" required>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label for="loginPassword">Password</label>
+        <div class="auth-input-wrap">
+          <svg class="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Enter your password" required>
+          <button type="button" class="auth-eye-btn" onclick="toggleLoginPasswordVisibility()" aria-label="Show password">
+            <svg id="loginEyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button type="submit" id="loginSubmitBtn" class="auth-submit-btn">
+        <span>Enter Bee Group</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
     </div>
-    <button type="submit" id="loginSubmitBtn" class="btn btn-primary auth-submit-btn">Sign In</button>
   </form>
 
   <div id="authPickerCard" class="auth-card" style="display:none">
@@ -1908,6 +2026,18 @@
       el.style.display = 'block';
     }
     function hideLoginError() { document.getElementById('loginError').style.display = 'none'; }
+
+    function toggleLoginPasswordVisibility() {
+      const input = document.getElementById('loginPassword');
+      const icon = document.getElementById('loginEyeIcon');
+      const btn = icon.closest('.auth-eye-btn');
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+      icon.innerHTML = showing
+        ? '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>'
+        : '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a20.3 20.3 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a20.3 20.3 0 0 1-2.68 3.7M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/>';
+    }
 
     async function handleLogoutClick() {
       await signOut();
