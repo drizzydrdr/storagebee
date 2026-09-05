@@ -4,17 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bee Group — Executive Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --gold: #c9a84c; --gold-dark: #a07830; --gold-light: #e8d5a3;
-    --bg: #000; --panel: #121212; --panel-2: #171717; --border: #262626;
-    --text: #f2f2f2; --muted: #8a8a8a; --danger: #e08080; --ok: #7bc98f;
+    --primary: #E26A52; --primary-dark: #C85A44; --primary-fg: #1F2026;
+    --accent: #365445; --accent-fg: #FEFFFF;
+    --bg: #1F2026; --panel: #292B30; --panel-2: #23242A; --border: #44464D;
+    --text: #FEFFFF; --muted: #B8BBC3; --danger: #CC5693; --ok: #7BC98F;
+    --heading-font: Georgia, 'Times New Roman', serif;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; font-family: 'Jost', Arial, sans-serif;
+    margin: 0; font-family: 'Inter', Arial, sans-serif;
     background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased;
   }
   #loadingGate { padding: 80px; text-align: center; color: var(--muted); font-size: 14px; }
@@ -24,71 +25,147 @@
   .sidebar {
     width: 220px; flex-shrink: 0; background: var(--panel);
     border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; padding: 28px 0;
+    display: flex; flex-direction: column; padding: 24px 0;
   }
-  .brand { padding: 0 24px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-  .brand-name { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; }
-  .brand-sub { font-size: 11px; color: var(--muted); margin-top: 3px; letter-spacing: 0.4px; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .brand-logo { width: 34px; height: 34px; border-radius: 9px; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; }
+  .brand-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .brand-name { font-size: 14px; font-weight: 700; letter-spacing: 0.2px; }
+  .brand-sub { font-size: 10px; color: var(--muted); margin-top: 1px; letter-spacing: 0.3px; }
+  .nav-eyebrow { padding: 0 20px 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
   .nav-item {
-    padding: 12px 24px; font-size: 14px; font-weight: 500; color: var(--muted);
-    cursor: pointer; border-right: 2px solid transparent; transition: color .15s, border-color .15s;
+    display: flex; align-items: center; gap: 10px;
+    margin: 2px 12px; padding: 10px 12px; font-size: 14px; font-weight: 500; color: var(--muted);
+    cursor: pointer; border-radius: 10px; transition: color .15s, background .15s;
   }
-  .nav-item:hover { color: var(--text); }
-  .nav-item.active { color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,0.05); }
+  .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .nav-item.active { color: var(--primary-fg); background: var(--primary); font-weight: 600; }
   .sidebar-spacer { flex: 1; }
-  .logout-item { padding: 12px 24px; font-size: 13px; color: var(--muted); cursor: pointer; }
-  .logout-item:hover { color: var(--danger); }
+  .logout-item { display: flex; align-items: center; gap: 10px; margin: 2px 12px; padding: 10px 12px; border-radius: 10px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  .logout-item svg { width: 16px; height: 16px; }
+  .logout-item:hover { color: var(--danger); background: rgba(255,255,255,0.04); }
 
   .main { flex: 1; padding: 32px 40px 60px; max-width: 1180px; }
   .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
-  .page-title { font-size: 22px; font-weight: 600; letter-spacing: 0.2px; }
+  .page-title { font-family: var(--heading-font); font-size: 24px; font-weight: 700; letter-spacing: 0.2px; }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
   select, input[type="text"] {
     background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
-    font-family: 'Jost', Arial, sans-serif; font-size: 13px; padding: 9px 14px;
-    border-radius: 8px; outline: none;
+    font-family: 'Inter', Arial, sans-serif; font-size: 13px; padding: 9px 14px;
+    border-radius: 10px; outline: none;
   }
-  select:focus, input[type="text"]:focus { border-color: var(--gold); }
-
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 28px; }
-  .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
-  .kpi-label { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.4px; text-transform: uppercase; }
-  .kpi-value { font-size: 30px; font-weight: 700; margin-top: 8px; color: var(--text); }
-  .kpi-value.gold { color: var(--gold); }
+  select:focus, input[type="text"]:focus { border-color: var(--primary); }
 
   .section { margin-bottom: 30px; }
-  .section-title { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 14px; }
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .shell { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; padding: 14px 0; overflow-x: auto; } .brand { display: none; } .sidebar-spacer { display: none; } .main { padding: 24px 18px 60px; } }
-  .chart-wrap { position: relative; height: 240px; }
+  .section-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .section-title { font-family: var(--heading-font); font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 14px; }
+  .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .section-heading h2 { font-family: var(--heading-font); font-size: 22px; font-weight: 700; margin: 0; }
+  .section-link { font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .two-col { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .shell { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; padding: 14px 0; overflow-x: auto; align-items: center; } .brand { display: none; } .nav-eyebrow { display: none; } .sidebar-spacer { display: none; } .main { padding: 24px 18px 60px; } }
   .empty { color: var(--muted); font-size: 13px; padding: 24px 0; text-align: center; }
 
-  .compare-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-  .compare-name { width: 130px; font-size: 13px; color: var(--text); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .compare-bar-track { flex: 1; background: var(--panel-2); border-radius: 6px; height: 10px; overflow: hidden; }
-  .compare-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); border-radius: 6px; }
-  .compare-val { width: 46px; text-align: right; font-size: 12px; color: var(--muted); flex-shrink: 0; }
+  /* ── Greeting header ── */
+  .greet-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 26px; flex-wrap: wrap; }
+  .greet-left { display: flex; align-items: center; gap: 14px; }
+  .greet-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; font-family: var(--heading-font); }
+  .greet-date { font-size: 12px; color: var(--muted); }
+  .greet-title { font-family: var(--heading-font); font-size: 24px; font-weight: 700; margin-top: 2px; }
+
+  /* ── Bee AI briefing hero ── */
+  .ai-hero { position: relative; overflow: hidden; background: var(--accent); border-radius: 20px; padding: 26px 28px; margin-bottom: 30px; }
+  .ai-hero-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+  .ai-hero-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+  .ai-hero-title { font-family: var(--heading-font); font-size: 26px; font-weight: 700; line-height: 1.25; max-width: 620px; margin-bottom: 10px; }
+  .ai-hero-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); max-width: 560px; min-height: 22px; margin-bottom: 20px; }
+  .ai-hero-btn {
+    background: #1a2a21; color: #fff; border: none; border-radius: 12px;
+    padding: 12px 20px; font-family: 'Inter', Arial, sans-serif; font-weight: 600; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  .ai-hero-btn svg { width: 15px; height: 15px; }
+  .ai-hero-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+  @media (max-width: 760px) { .ai-hero-chips { grid-template-columns: 1fr; } }
+  .ai-hero-chip {
+    background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; transition: border-color .15s;
+  }
+  .ai-hero-chip:hover { border-color: var(--primary); }
+  .ai-hero-chip-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+  .ai-hero-chip-sub { font-size: 12px; color: rgba(255,255,255,0.65); }
+  .ai-hero-signal {
+    position: absolute; top: 24px; right: 28px; width: 108px; height: 108px; border-radius: 50%;
+    background: var(--primary); color: var(--primary-fg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  }
+  .ai-hero-signal svg { width: 20px; height: 20px; margin-bottom: 2px; }
+  .ai-hero-signal-num { font-family: var(--heading-font); font-size: 20px; font-weight: 700; line-height: 1; }
+  .ai-hero-signal-label { font-size: 10px; font-weight: 600; margin-top: 2px; }
+  @media (max-width: 640px) { .ai-hero-signal { display: none; } }
+
+  /* ── KPI cards ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 30px; }
+  .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+  .kpi-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--panel-2); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .kpi-icon svg { width: 17px; height: 17px; }
+  .kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.3px; }
+  .kpi-value { font-family: var(--heading-font); font-size: 28px; font-weight: 700; margin-top: 6px; color: var(--text); }
+  .kpi-sub { font-size: 11px; color: var(--ok); margin-top: 6px; font-weight: 500; }
+  .kpi-sub.muted { color: var(--muted); }
+
+  /* ── Units by category ── */
+  .cat-largest { background: var(--accent); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .cat-largest-label { font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; margin-bottom: 6px; }
+  .cat-largest-name { font-family: var(--heading-font); font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .cat-largest-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 10px; }
+  .cat-largest-track { height: 6px; border-radius: 4px; background: rgba(255,255,255,0.18); overflow: hidden; }
+  .cat-largest-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+  .cat-row { margin-bottom: 12px; }
+  .cat-row:last-child { margin-bottom: 0; }
+  .cat-row-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .cat-row-name { color: var(--text); font-weight: 500; }
+  .cat-row-val { color: var(--muted); }
+  .cat-row-track { height: 7px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+  .cat-row-fill { height: 100%; border-radius: 4px; background: var(--primary); }
+
+  /* ── Operational signals ── */
+  .signal-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .signal-item:last-child { border-bottom: none; }
+  .signal-icon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .signal-icon svg { width: 15px; height: 15px; }
+  .signal-icon.alert { background: rgba(204,86,147,0.15); color: var(--danger); }
+  .signal-icon.warn { background: rgba(226,106,82,0.15); color: var(--primary); }
+  .signal-text { font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .signal-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .signal-log-btn {
+    width: 100%; margin-top: 14px; background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px; padding: 11px; font-family: 'Inter', Arial, sans-serif;
+    font-weight: 600; font-size: 13px; cursor: pointer;
+  }
+  .signal-log-btn:hover { border-color: var(--primary); }
+
+  /* ── Storage comparison (quota-square style) ── */
+  .quota-row { margin-bottom: 16px; }
+  .quota-row:last-child { margin-bottom: 0; }
+  .quota-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 8px; }
+  .quota-name { font-weight: 600; color: var(--text); }
+  .quota-val { color: var(--muted); font-size: 12px; }
+  .quota-squares { display: flex; gap: 5px; }
+  .quota-square { flex: 1; height: 20px; border-radius: 5px; background: var(--panel-2); border: 1px dashed var(--border); }
+  .quota-square.filled { background: var(--primary); border: 1px solid var(--primary); }
 
   .attn-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
   .attn-item:last-child { border-bottom: none; }
   .attn-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
-  .attn-dot.warn { background: var(--gold); }
+  .attn-dot.warn { background: var(--primary); }
   .attn-dot.alert { background: var(--danger); }
   .attn-text { font-size: 13px; line-height: 1.5; }
   .attn-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-  .ai-panel {
-    background: linear-gradient(135deg, #151109 0%, var(--panel) 60%);
-    border: 1px solid rgba(201,168,76,0.3); border-radius: 12px; padding: 20px 22px;
-    cursor: pointer; transition: border-color .15s;
-  }
-  .ai-panel:hover { border-color: var(--gold); }
-  .ai-panel-label { font-size: 11px; color: var(--gold); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
-  .ai-panel-text { font-size: 14px; line-height: 1.6; color: var(--text); min-height: 22px; }
-  .ai-panel-hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
 
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 13px; }
@@ -96,20 +173,20 @@
   .filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
   .action-tag { padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
   .action-tag.add, .action-tag.increase { background: rgba(123,201,143,0.12); color: var(--ok); }
-  .action-tag.decrease, .action-tag.delete { background: rgba(224,128,128,0.12); color: var(--danger); }
-  .action-tag.edit { background: rgba(201,168,76,0.12); color: var(--gold); }
+  .action-tag.decrease, .action-tag.delete { background: rgba(204,86,147,0.12); color: var(--danger); }
+  .action-tag.edit { background: rgba(226,106,82,0.12); color: var(--primary); }
 
   .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 140px); max-height: 720px; }
   .chat-messages { flex: 1; overflow-y: auto; padding: 8px 4px 20px; }
   .msg { max-width: 72%; margin-bottom: 14px; padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.55; }
-  .msg.user { background: var(--gold); color: #000; margin-left: auto; border-bottom-right-radius: 4px; }
+  .msg.user { background: var(--primary); color: var(--primary-fg); margin-left: auto; border-bottom-right-radius: 4px; }
   .msg.assistant { background: var(--panel-2); border: 1px solid var(--border); margin-right: auto; border-bottom-left-radius: 4px; }
   .msg.thinking { color: var(--muted); font-style: italic; }
   .chat-input-row { display: flex; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
   .chat-input-row input { flex: 1; padding: 13px 16px; }
   .chat-input-row button {
-    background: var(--gold); color: #000; border: none; border-radius: 8px;
-    padding: 0 22px; font-family: 'Jost', Arial, sans-serif; font-weight: 600; font-size: 13px; cursor: pointer;
+    background: var(--primary); color: var(--primary-fg); border: none; border-radius: 10px;
+    padding: 0 22px; font-family: 'Inter', Arial, sans-serif; font-weight: 700; font-size: 13px; cursor: pointer;
   }
   .chat-input-row button:disabled { opacity: 0.5; }
   .chat-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 60px 20px; }
@@ -122,53 +199,113 @@
 <div id="ceoApp" class="shell" style="display:none">
   <div class="sidebar">
     <div class="brand">
-      <div class="brand-name">Bee Group</div>
-      <div class="brand-sub">Executive Dashboard</div>
+      <div class="brand-logo"><img src="logo.png" alt="Bee Group"></div>
+      <div>
+        <div class="brand-name">Bee Group</div>
+        <div class="brand-sub">Warehouse intelligence</div>
+      </div>
     </div>
-    <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">Overview</div>
-    <div class="nav-item" data-tab="logs" onclick="switchTab('logs')">Logs</div>
-    <div class="nav-item" data-tab="ai" onclick="switchTab('ai')">AI Assistant</div>
+    <div class="nav-eyebrow">Command Center</div>
+    <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      Overview
+    </div>
+    <div class="nav-item" data-tab="logs" onclick="switchTab('logs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+      Activity logs
+    </div>
+    <div class="nav-item" data-tab="ai" onclick="switchTab('ai')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      Bee AI
+    </div>
     <div class="sidebar-spacer"></div>
-    <div class="logout-item" onclick="handleLogout()">Log Out</div>
+    <div class="logout-item" onclick="handleLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Log out
+    </div>
   </div>
 
   <div class="main">
 
     <div class="tab-panel active" id="panel-overview">
-      <div class="page-head">
-        <div class="page-title">Overview</div>
+
+      <div class="greet-row">
+        <div class="greet-left">
+          <div class="greet-avatar" id="greetAvatar">?</div>
+          <div>
+            <div class="greet-date" id="greetDate"></div>
+            <div class="greet-title" id="greetTitle">Welcome back.</div>
+          </div>
+        </div>
         <select id="storageFilter" onchange="onFilterChange()"></select>
       </div>
 
-      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="ai-hero">
+        <div class="ai-hero-signal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+          <div class="ai-hero-signal-num" id="signalCount">0</div>
+          <div class="ai-hero-signal-label">signals</div>
+        </div>
+        <div class="ai-hero-label"><span class="ai-hero-dot"></span>Bee AI briefing</div>
+        <div class="ai-hero-title">What needs your attention today?</div>
+        <div class="ai-hero-text" id="insightText">Loading…</div>
+        <button class="ai-hero-btn" onclick="goToAiFromInsight()">
+          Talk to Bee AI
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+        <div class="ai-hero-chips">
+          <div class="ai-hero-chip" onclick="askQuickQuestion('What needs my attention right now?')">
+            <div class="ai-hero-chip-title">What needs my attention?</div>
+            <div class="ai-hero-chip-sub">Surface risk and zero stock.</div>
+          </div>
+          <div class="ai-hero-chip" onclick="askQuickQuestion('Compare my storages for me.')">
+            <div class="ai-hero-chip-title">Compare storages</div>
+            <div class="ai-hero-chip-sub">Understand stock distribution.</div>
+          </div>
+          <div class="ai-hero-chip" onclick="askQuickQuestion('Give me the short version of what happened today.')">
+            <div class="ai-hero-chip-title">Give me the short version</div>
+            <div class="ai-hero-chip-sub">A warm daily operations brief.</div>
+          </div>
+        </div>
+      </div>
 
       <div class="section">
-        <div class="ai-panel" onclick="goToAiFromInsight()">
-          <div class="ai-panel-label">AI Insight</div>
-          <div class="ai-panel-text" id="insightText">Loading…</div>
-          <div class="ai-panel-hint">Ask the AI Assistant anything about your storages →</div>
+        <div class="section-heading">
+          <div>
+            <div class="section-eyebrow">Today's pulse</div>
+            <h2>A calm read on your warehouses</h2>
+          </div>
+          <a class="section-link" onclick="switchTab('logs')">See activity →</a>
         </div>
+        <div class="kpi-grid" id="kpiGrid"></div>
       </div>
 
       <div class="two-col section">
         <div class="card">
-          <div class="section-title">Units by Category</div>
-          <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+          <div class="section-eyebrow">Inventory rhythm</div>
+          <div class="section-heading" style="margin-bottom:16px">
+            <h2 style="font-size:18px">Units by category</h2>
+            <a class="section-link" onclick="askQuickQuestion('Break down our units by category.')">Ask Bee AI</a>
+          </div>
+          <div id="categoryBreakdown"></div>
         </div>
         <div class="card">
-          <div class="section-title">Item Types by Category</div>
-          <div class="chart-wrap"><canvas id="barChart"></canvas></div>
-        </div>
-      </div>
-
-      <div class="two-col section">
-        <div class="card" id="compareCard">
-          <div class="section-title">Storage Comparison</div>
-          <div id="compareList"></div>
-        </div>
-        <div class="card">
-          <div class="section-title">Needs Attention</div>
+          <div class="section-eyebrow">A few things to keep close</div>
+          <div class="section-heading" style="margin-bottom:8px"><h2 style="font-size:18px">Operational signals</h2></div>
           <div id="attentionList"></div>
+          <button class="signal-log-btn" onclick="switchTab('logs')">View activity log</button>
+        </div>
+      </div>
+
+      <div class="section" id="compareSection">
+        <div class="section-heading">
+          <div>
+            <div class="section-eyebrow">Across your storages</div>
+            <h2>How storage stacks up</h2>
+          </div>
+        </div>
+        <div class="card" id="compareCard">
+          <div id="compareList"></div>
         </div>
       </div>
     </div>
@@ -195,7 +332,7 @@
     </div>
 
     <div class="tab-panel" id="panel-ai">
-      <div class="page-head"><div class="page-title">AI Assistant</div></div>
+      <div class="page-head"><div class="page-title">Bee AI</div></div>
       <div class="chat-wrap">
         <div class="chat-messages" id="chatMessages">
           <div class="chat-empty" id="chatEmpty">Ask about quantities, categories, recent activity, or anything else across your storages.</div>
@@ -218,18 +355,27 @@
 let allStorages = [];
 let allItems = [];
 let allLogsRecent = [];
-let pieChartInst = null, barChartInst = null;
 let chatHistory = [];
-const CHART_COLORS = ['#c9a84c','#e8d5a3','#8a8a8a','#7bc98f','#e08080','#a07830','#5a6a85','#3d6b4f'];
+let myProfile = null;
+const CAT_COLORS = ['#E26A52', '#365445', '#B8BBC3', '#7BC98F', '#CC5693', '#4C7A63'];
 
 async function init() {
   const profile = await requireRole('ceo');
   if (!profile) return;
+  myProfile = profile;
+  renderGreeting(profile);
   document.getElementById('loadingGate').style.display = 'none';
   document.getElementById('ceoApp').style.display = 'flex';
   await loadOverview();
   loadInsight();
   setInterval(loadOverview, 30000);
+}
+
+function renderGreeting(profile) {
+  const name = (profile && profile.full_name) ? profile.full_name.split(' ')[0] : '';
+  document.getElementById('greetTitle').textContent = name ? `Welcome back, ${name}.` : 'Welcome back.';
+  document.getElementById('greetAvatar').textContent = name ? name[0].toUpperCase() : 'B';
+  document.getElementById('greetDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
 function switchTab(name) {
@@ -276,27 +422,39 @@ function renderOverviewForFilter() {
   const storagesInView = filterId ? allStorages.filter(s => s.id === filterId) : allStorages;
 
   renderKpis(items, storagesInView, filterId);
-  renderCharts(items);
-  document.getElementById('compareCard').style.display = filterId ? 'none' : 'block';
+  renderCategoryBreakdown(items);
+  document.getElementById('compareSection').style.display = filterId ? 'none' : 'block';
   if (!filterId) renderComparison();
   renderAttention(filterId);
 }
 
 function renderKpis(items, storagesInView, filterId) {
   const totalUnits = items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
+  const catCount = new Set(items.map(i => (i.categories && i.categories.name) || 'Uncategorized')).size;
   const todayStr = new Date().toDateString();
   const todaysLogs = allLogsRecent.filter(l =>
     (!filterId || l.storage_id === filterId) && new Date(l.created_at).toDateString() === todayStr
   ).length;
-  document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Storages</div><div class="kpi-value">${storagesInView.length}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Item Types</div><div class="kpi-value">${items.length}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Total Units</div><div class="kpi-value gold">${totalUnits}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Today's Activity</div><div class="kpi-value">${todaysLogs}</div></div>
-  `;
+  const scopeLabel = filterId ? (storagesInView[0] ? storagesInView[0].name : 'this storage') : 'all storages';
+
+  const kpis = [
+    { label: 'Storages reporting', value: storagesInView.length, sub: 'All systems live', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+    { label: 'Item types tracked', value: items.length, sub: `Across ${catCount} categor${catCount === 1 ? 'y' : 'ies'}`, icon: 'M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
+    { label: 'Total units on hand', value: totalUnits, sub: `In ${escapeHtmlCeo(scopeLabel)}`, icon: 'M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM9 5h6v2H9z' },
+    { label: 'Movements today', value: todaysLogs, sub: todaysLogs ? `${todaysLogs} change${todaysLogs > 1 ? 's' : ''} logged` : 'No new changes', icon: 'M3 12h4l3 8 4-16 3 8h4', subMuted: todaysLogs === 0 }
+  ];
+
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${k.icon}"/></svg></div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub${k.subMuted ? ' muted' : ''}">${k.sub}</div>
+    </div>
+  `).join('');
 }
 
-function renderCharts(items) {
+function renderCategoryBreakdown(items) {
   const byCat = {};
   items.forEach(i => {
     const cat = (i.categories && i.categories.name) || 'Uncategorized';
@@ -304,35 +462,30 @@ function renderCharts(items) {
     byCat[cat].count++;
     byCat[cat].units += Number(i.quantity) || 0;
   });
-  const labels = Object.keys(byCat);
-  const unitVals = labels.map(l => byCat[l].units);
-  const countVals = labels.map(l => byCat[l].count);
-  const colors = labels.map((_, idx) => CHART_COLORS[idx % CHART_COLORS.length]);
+  const rows = Object.keys(byCat).map(name => ({ name, ...byCat[name] })).sort((a, b) => b.units - a.units);
+  const el = document.getElementById('categoryBreakdown');
 
-  const chartOpts = {
-    plugins: { legend: { labels: { color: '#ccc', font: { family: 'Jost', size: 11 } } } }
-  };
+  if (!rows.length) { el.innerHTML = '<div class="empty">No items yet</div>'; return; }
 
-  if (pieChartInst) pieChartInst.destroy();
-  pieChartInst = new Chart(document.getElementById('pieChart'), {
-    type: 'doughnut',
-    data: { labels, datasets: [{ data: unitVals, backgroundColor: colors, borderColor: '#121212', borderWidth: 2 }] },
-    options: { ...chartOpts, maintainAspectRatio: false }
-  });
+  const totalUnits = rows.reduce((s, r) => s + r.units, 0);
+  const top = rows[0];
+  const max = Math.max(1, ...rows.map(r => r.units));
 
-  if (barChartInst) barChartInst.destroy();
-  barChartInst = new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{ data: countVals, backgroundColor: colors }] },
-    options: {
-      ...chartOpts, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#8a8a8a', font: { family: 'Jost', size: 10 } }, grid: { color: '#262626' } },
-        y: { ticks: { color: '#8a8a8a', font: { family: 'Jost', size: 10 } }, grid: { color: '#262626' }, beginAtZero: true }
-      }
-    }
-  });
+  const largestHtml = `
+    <div class="cat-largest">
+      <div class="cat-largest-label">Largest category</div>
+      <div class="cat-largest-name">${escapeHtmlCeo(top.name)}</div>
+      <div class="cat-largest-sub">${top.units} of ${totalUnits} total units</div>
+      <div class="cat-largest-track"><div class="cat-largest-fill" style="width:${(top.units / totalUnits * 100).toFixed(0)}%"></div></div>
+    </div>`;
+
+  const restHtml = rows.slice(1, 6).map(r => `
+    <div class="cat-row">
+      <div class="cat-row-head"><span class="cat-row-name">${escapeHtmlCeo(r.name)}</span><span class="cat-row-val">${r.units} units</span></div>
+      <div class="cat-row-track"><div class="cat-row-fill" style="width:${(r.units / max * 100).toFixed(0)}%"></div></div>
+    </div>`).join('');
+
+  el.innerHTML = largestHtml + restHtml;
 }
 
 function renderComparison() {
@@ -341,13 +494,16 @@ function renderComparison() {
     return { name: s.name, units };
   }).sort((a, b) => b.units - a.units);
   const max = Math.max(1, ...totalsByStorage.map(s => s.units));
-  document.getElementById('compareList').innerHTML = totalsByStorage.length ? totalsByStorage.map(s => `
-    <div class="compare-row">
-      <div class="compare-name">${escapeHtmlCeo(s.name)}</div>
-      <div class="compare-bar-track"><div class="compare-bar-fill" style="width:${(s.units / max * 100).toFixed(0)}%"></div></div>
-      <div class="compare-val">${s.units}</div>
-    </div>
-  `).join('') : '<div class="empty">No storages yet</div>';
+  const SQUARES = 10;
+  document.getElementById('compareList').innerHTML = totalsByStorage.length ? totalsByStorage.map(s => {
+    const filled = Math.round((s.units / max) * SQUARES);
+    const squares = Array.from({ length: SQUARES }, (_, idx) => `<div class="quota-square${idx < filled ? ' filled' : ''}"></div>`).join('');
+    return `
+    <div class="quota-row">
+      <div class="quota-head"><span class="quota-name">${escapeHtmlCeo(s.name)}</span><span class="quota-val">${s.units} units</span></div>
+      <div class="quota-squares">${squares}</div>
+    </div>`;
+  }).join('') : '<div class="empty">No storages yet</div>';
 }
 
 function renderAttention(filterId) {
@@ -356,7 +512,7 @@ function renderAttention(filterId) {
 
   const zeroItems = (filterId ? allItems.filter(i => i.storage_id === filterId) : allItems).filter(i => Number(i.quantity) === 0);
   if (zeroItems.length > 0) {
-    items.push({ type: 'alert', text: `${zeroItems.length} item${zeroItems.length > 1 ? 's are' : ' is'} at zero stock`, sub: 'Consider restocking or removing' });
+    items.push({ type: 'alert', text: `${zeroItems.length} item${zeroItems.length > 1 ? 's are' : ' is'} at zero stock`, sub: 'Worth deciding whether to restock or retire.' });
   }
 
   const weekAgo = Date.now() - 7 * 86400000;
@@ -378,11 +534,16 @@ function renderAttention(filterId) {
       sub: l.reason ? `Reason: ${l.reason}` : 'No reason given'
     }));
 
+  document.getElementById('signalCount').textContent = items.length;
+
+  const iconAlert = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+  const iconWarn = '<path d="M12 19V5M5 12l7-7 7 7"/>';
+
   document.getElementById('attentionList').innerHTML = items.length
     ? items.slice(0, 6).map(i => `
-      <div class="attn-item">
-        <div class="attn-dot ${i.type}"></div>
-        <div><div class="attn-text">${escapeHtmlCeo(i.text)}</div><div class="attn-sub">${escapeHtmlCeo(i.sub)}</div></div>
+      <div class="signal-item">
+        <div class="signal-icon ${i.type}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${i.type === 'alert' ? iconAlert : iconWarn}</svg></div>
+        <div><div class="signal-text">${escapeHtmlCeo(i.text)}</div><div class="signal-sub">${escapeHtmlCeo(i.sub)}</div></div>
       </div>`).join('')
     : '<div class="empty">Nothing needs attention right now</div>';
 }
@@ -437,6 +598,13 @@ async function loadInsight() {
 }
 
 function goToAiFromInsight() { switchTab('ai'); }
+
+function askQuickQuestion(question) {
+  switchTab('ai');
+  const input = document.getElementById('chatInput');
+  input.value = question;
+  sendChatMessage();
+}
 
 async function sendChatMessage() {
   const input = document.getElementById('chatInput');
