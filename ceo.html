@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bee Group — Executive Dashboard</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --primary: #E26A52; --primary-dark: #C85A44; --primary-fg: #1F2026;
@@ -28,7 +30,7 @@
     display: flex; flex-direction: column; padding: 24px 0;
   }
   .brand { display: flex; align-items: center; gap: 10px; padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
-  .brand-logo { width: 34px; height: 34px; border-radius: 9px; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 4px; }
+  .brand-logo { width: 46px; height: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
   .brand-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .brand-name { font-size: 14px; font-weight: 700; letter-spacing: 0.2px; }
   .brand-sub { font-size: 10px; color: var(--muted); margin-top: 1px; letter-spacing: 0.3px; }
@@ -66,6 +68,7 @@
   .section-heading h2 { font-family: var(--heading-font); font-size: 22px; font-weight: 700; margin: 0; }
   .section-link { font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; cursor: pointer; white-space: nowrap; }
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+  .chart-wrap { position: relative; height: 240px; }
   .two-col { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
   @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } .shell { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; padding: 14px 0; overflow-x: auto; align-items: center; } .brand { display: none; } .nav-eyebrow { display: none; } .sidebar-spacer { display: none; } .main { padding: 24px 18px 60px; } }
   .empty { color: var(--muted); font-size: 13px; padding: 24px 0; text-align: center; }
@@ -98,15 +101,6 @@
   .ai-hero-chip:hover { border-color: var(--primary); }
   .ai-hero-chip-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
   .ai-hero-chip-sub { font-size: 12px; color: rgba(255,255,255,0.65); }
-  .ai-hero-signal {
-    position: absolute; top: 24px; right: 28px; width: 108px; height: 108px; border-radius: 50%;
-    background: var(--primary); color: var(--primary-fg);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-  }
-  .ai-hero-signal svg { width: 20px; height: 20px; margin-bottom: 2px; }
-  .ai-hero-signal-num { font-family: var(--heading-font); font-size: 20px; font-weight: 700; line-height: 1; }
-  .ai-hero-signal-label { font-size: 10px; font-weight: 600; margin-top: 2px; }
-  @media (max-width: 640px) { .ai-hero-signal { display: none; } }
 
   /* ── KPI cards ── */
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 30px; }
@@ -237,15 +231,9 @@
             <div class="greet-title" id="greetTitle">Welcome back.</div>
           </div>
         </div>
-        <select id="storageFilter" onchange="onFilterChange()"></select>
       </div>
 
       <div class="ai-hero">
-        <div class="ai-hero-signal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-          <div class="ai-hero-signal-num" id="signalCount">0</div>
-          <div class="ai-hero-signal-label">signals</div>
-        </div>
         <div class="ai-hero-label"><span class="ai-hero-dot"></span>Bee AI briefing</div>
         <div class="ai-hero-title">What needs your attention today?</div>
         <div class="ai-hero-text" id="insightText">Loading…</div>
@@ -278,6 +266,26 @@
           <a class="section-link" onclick="switchTab('logs')">See activity →</a>
         </div>
         <div class="kpi-grid" id="kpiGrid"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-heading">
+          <div>
+            <div class="section-eyebrow">Statistics</div>
+            <h2>Category breakdown</h2>
+          </div>
+          <select id="chartStorageFilter" onchange="renderStatsCharts()"></select>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="section-title">Units by Category</div>
+            <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="section-title">Item Types by Category</div>
+            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+        </div>
       </div>
 
       <div class="two-col section">
@@ -357,7 +365,8 @@ let allItems = [];
 let allLogsRecent = [];
 let chatHistory = [];
 let myProfile = null;
-const CAT_COLORS = ['#E26A52', '#365445', '#B8BBC3', '#7BC98F', '#CC5693', '#4C7A63'];
+let pieChartInst = null, barChartInst = null;
+const CHART_COLORS = ['#E26A52', '#365445', '#B8BBC3', '#7BC98F', '#CC5693', '#4C7A63'];
 
 async function init() {
   const profile = await requireRole('ceo');
@@ -372,9 +381,11 @@ async function init() {
 }
 
 function renderGreeting(profile) {
-  const name = (profile && profile.full_name) ? profile.full_name.split(' ')[0] : '';
-  document.getElementById('greetTitle').textContent = name ? `Welcome back, ${name}.` : 'Welcome back.';
-  document.getElementById('greetAvatar').textContent = name ? name[0].toUpperCase() : 'B';
+  const fullName = (profile && profile.full_name) ? profile.full_name.trim() : '';
+  const parts = fullName.split(/\s+/);
+  const lastName = parts.length ? parts[parts.length - 1] : '';
+  document.getElementById('greetTitle').textContent = lastName ? `Welcome back, Mr. ${lastName}.` : 'Welcome back.';
+  document.getElementById('greetAvatar').textContent = lastName ? lastName[0].toUpperCase() : 'B';
   document.getElementById('greetDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
@@ -396,51 +407,39 @@ async function loadOverview() {
     .order('created_at', { ascending: false }).limit(300);
   allLogsRecent = logs || [];
 
-  populateStorageFilter();
-  renderOverviewForFilter();
+  populateStorageFilters();
+  renderKpis(allItems, allStorages);
+  renderCategoryBreakdown(allItems);
+  renderComparison();
+  renderAttention();
+  renderStatsCharts();
 }
 
-function populateStorageFilter() {
-  const sel = document.getElementById('storageFilter');
-  const current = sel.value || '';
-  sel.innerHTML = '<option value="">All Storages</option>' +
+function populateStorageFilters() {
+  const options = '<option value="">All Storages</option>' +
     allStorages.map(s => `<option value="${s.id}">${escapeHtmlCeo(s.name)}</option>`).join('');
-  sel.value = current;
 
   const logSel = document.getElementById('logStorageFilter');
   const logCurrent = logSel.value || '';
-  logSel.innerHTML = '<option value="">All Storages</option>' +
-    allStorages.map(s => `<option value="${s.id}">${escapeHtmlCeo(s.name)}</option>`).join('');
+  logSel.innerHTML = options;
   logSel.value = logCurrent;
+
+  const chartSel = document.getElementById('chartStorageFilter');
+  const chartCurrent = chartSel.value || '';
+  chartSel.innerHTML = options;
+  chartSel.value = chartCurrent;
 }
 
-function onFilterChange() { renderOverviewForFilter(); }
-
-function renderOverviewForFilter() {
-  const filterId = document.getElementById('storageFilter').value;
-  const items = filterId ? allItems.filter(i => i.storage_id === filterId) : allItems;
-  const storagesInView = filterId ? allStorages.filter(s => s.id === filterId) : allStorages;
-
-  renderKpis(items, storagesInView, filterId);
-  renderCategoryBreakdown(items);
-  document.getElementById('compareSection').style.display = filterId ? 'none' : 'block';
-  if (!filterId) renderComparison();
-  renderAttention(filterId);
-}
-
-function renderKpis(items, storagesInView, filterId) {
+function renderKpis(items, storagesInView) {
   const totalUnits = items.reduce((s, i) => s + (Number(i.quantity) || 0), 0);
   const catCount = new Set(items.map(i => (i.categories && i.categories.name) || 'Uncategorized')).size;
   const todayStr = new Date().toDateString();
-  const todaysLogs = allLogsRecent.filter(l =>
-    (!filterId || l.storage_id === filterId) && new Date(l.created_at).toDateString() === todayStr
-  ).length;
-  const scopeLabel = filterId ? (storagesInView[0] ? storagesInView[0].name : 'this storage') : 'all storages';
+  const todaysLogs = allLogsRecent.filter(l => new Date(l.created_at).toDateString() === todayStr).length;
 
   const kpis = [
     { label: 'Storages reporting', value: storagesInView.length, sub: 'All systems live', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
     { label: 'Item types tracked', value: items.length, sub: `Across ${catCount} categor${catCount === 1 ? 'y' : 'ies'}`, icon: 'M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' },
-    { label: 'Total units on hand', value: totalUnits, sub: `In ${escapeHtmlCeo(scopeLabel)}`, icon: 'M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM9 5h6v2H9z' },
+    { label: 'Total units on hand', value: totalUnits, sub: `Across ${storagesInView.length} storage${storagesInView.length === 1 ? '' : 's'}`, icon: 'M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM9 5h6v2H9z' },
     { label: 'Movements today', value: todaysLogs, sub: todaysLogs ? `${todaysLogs} change${todaysLogs > 1 ? 's' : ''} logged` : 'No new changes', icon: 'M3 12h4l3 8 4-16 3 8h4', subMuted: todaysLogs === 0 }
   ];
 
@@ -488,6 +487,48 @@ function renderCategoryBreakdown(items) {
   el.innerHTML = largestHtml + restHtml;
 }
 
+function renderStatsCharts() {
+  const filterId = document.getElementById('chartStorageFilter').value;
+  const items = filterId ? allItems.filter(i => i.storage_id === filterId) : allItems;
+
+  const byCat = {};
+  items.forEach(i => {
+    const cat = (i.categories && i.categories.name) || 'Uncategorized';
+    if (!byCat[cat]) byCat[cat] = { count: 0, units: 0 };
+    byCat[cat].count++;
+    byCat[cat].units += Number(i.quantity) || 0;
+  });
+  const labels = Object.keys(byCat);
+  const unitVals = labels.map(l => byCat[l].units);
+  const countVals = labels.map(l => byCat[l].count);
+  const colors = labels.map((_, idx) => CHART_COLORS[idx % CHART_COLORS.length]);
+
+  const chartOpts = {
+    plugins: { legend: { labels: { color: '#B8BBC3', font: { family: 'Inter', size: 11 } } } }
+  };
+
+  if (pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: unitVals, backgroundColor: colors, borderColor: '#292B30', borderWidth: 2 }] },
+    options: { ...chartOpts, maintainAspectRatio: false }
+  });
+
+  if (barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: countVals, backgroundColor: colors }] },
+    options: {
+      ...chartOpts, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#B8BBC3', font: { family: 'Inter', size: 10 } }, grid: { color: '#44464D' } },
+        y: { ticks: { color: '#B8BBC3', font: { family: 'Inter', size: 10 } }, grid: { color: '#44464D' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
 function renderComparison() {
   const totalsByStorage = allStorages.map(s => {
     const units = allItems.filter(i => i.storage_id === s.id).reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
@@ -506,11 +547,11 @@ function renderComparison() {
   }).join('') : '<div class="empty">No storages yet</div>';
 }
 
-function renderAttention(filterId) {
+function renderAttention() {
   const items = [];
-  const relevantLogs = allLogsRecent.filter(l => !filterId || l.storage_id === filterId);
+  const relevantLogs = allLogsRecent;
 
-  const zeroItems = (filterId ? allItems.filter(i => i.storage_id === filterId) : allItems).filter(i => Number(i.quantity) === 0);
+  const zeroItems = allItems.filter(i => Number(i.quantity) === 0);
   if (zeroItems.length > 0) {
     items.push({ type: 'alert', text: `${zeroItems.length} item${zeroItems.length > 1 ? 's are' : ' is'} at zero stock`, sub: 'Worth deciding whether to restock or retire.' });
   }
@@ -533,8 +574,6 @@ function renderAttention(filterId) {
       text: `"${l.item_description}" was deleted${l.storages ? ' from ' + l.storages.name : ''}`,
       sub: l.reason ? `Reason: ${l.reason}` : 'No reason given'
     }));
-
-  document.getElementById('signalCount').textContent = items.length;
 
   const iconAlert = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
   const iconWarn = '<path d="M12 19V5M5 12l7-7 7 7"/>';
