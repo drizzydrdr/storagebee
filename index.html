@@ -335,14 +335,8 @@
       background: var(--auth-card); border: 1px solid var(--auth-border);
       border-radius: var(--auth-radius); padding: 20px;
     }
-    .auth-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .auth-panel-head { margin-bottom: 20px; }
     .auth-panel-label { font-size: 15px; font-weight: 700; color: var(--auth-primary); }
-    .auth-panel-icon {
-      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-      background: var(--auth-accent); color: var(--auth-accent-fg);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .auth-panel-icon svg { width: 20px; height: 20px; }
 
     .auth-field { margin-bottom: 16px; text-align: left; }
     .auth-field label {
@@ -724,9 +718,6 @@
     <div class="auth-panel">
       <div class="auth-panel-head">
         <div class="auth-panel-label">Sign in</div>
-        <div class="auth-panel-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-6 9 6v11"/><path d="M9 21v-6h6v6"/></svg>
-        </div>
       </div>
       <div id="loginError" class="auth-error"></div>
       <div class="auth-field">
